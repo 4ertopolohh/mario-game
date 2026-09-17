@@ -172,12 +172,14 @@ export class Game {
 
     const enemies = this.entityManager.entities.filter(e =>
       e.alive && (e.type === "enemy-1" || e.type === "enemy-2" || e.type === "enemy-3"));
+    const friends = this.entityManager.entities.filter(e => e.alive && e.isFriend);
     const projectiles = this.entityManager.entities.filter(e => e.alive && e.type === "projectile");
     const boss = this.entityManager.entities.find(e => e.alive && e.type === "boss") || null;
 
     const result = this.collisionManager.resolveEntityInteractions({
       player: this.player,
       enemies,
+      friends,
       boss,
       projectiles,
       level,
@@ -213,6 +215,24 @@ export class Game {
 
   _startFinale() {
     if (this.state === GameState.FINALE) return;
+
+    // 1. Зачистка боя: обычные enemies + hostile projectiles.
+    for (const e of this.entityManager.entities) {
+      if (!e.alive) continue;
+      if (e.type === "enemy-1" || e.type === "enemy-2" || e.type === "enemy-3" ||
+          e.type === "projectile") {
+        e.alive = false;
+      }
+    }
+    this.entityManager.flushRemovals();
+
+    // 2. Ловушки больше не наносят damage.
+    for (const trap of this.levelManager.traps) {
+      if (typeof trap.disable === "function") trap.disable();
+    }
+
+    // 3. Boss уже dead (Boss.takeDamage проставил alive=false до эмита события).
+
     this.setState(GameState.FINALE);
     this.finaleController.start();
   }
@@ -221,7 +241,7 @@ export class Game {
     for (const e of this.entityManager.entities) {
       if (!e.alive) continue;
       if (e.type === "player") continue;
-      if (e.isFriend) continue; // Friend-ы играют spawn-звук самостоятельно
+      if (e.isFriend) continue; // Friend играет spawn-звук самостоятельно
       if (!e.firstVisibleScheduled) e.firstVisibleScheduled = false;
       if (e.visibilityScheduled) continue;
       if (!this.camera.isCenterVisible(e)) continue;
@@ -243,7 +263,6 @@ export class Game {
     await this.levelManager.completeLevel();
     this.player = this.levelManager.player;
     if (this.player) this.hudManager.updateHealth(this.player.health);
-    // Показываем интро нового уровня
     if (this.state === GameState.PLAYING) {
       this.levelIntro.show(this.levelManager.currentLevelId);
     }
@@ -265,7 +284,6 @@ export class Game {
     const level = this.levelManager.currentLevel;
     if (level) {
       this.renderer.drawBackground(level);
-      // Fireworks — «фон» праздника
       if (this.state === GameState.FINALE) {
         this.finaleController.renderFireworks(this.renderer.ctx);
       }

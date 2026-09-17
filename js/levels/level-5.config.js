@@ -28,35 +28,31 @@ export const LEVEL_5 = {
     { id: "e5-3", type: "enemy3", spawn: { x: 1500, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 1500, y: 544 }, { x: 1750, y: 544 }] } },
     { id: "e5-4", type: "enemy1", spawn: { x: 2000, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2000, y: 544 }, { x: 2250, y: 544 }] } }
   ],
-  friends: [
-    { id: "f5-1", type: "friend-1", spawn: { x: 350, y: 544 } },
-    { id: "f5-2", type: "friend-2", spawn: { x: 650, y: 544 } },
-    { id: "f5-3", type: "friend-3", spawn: { x: 950, y: 544 } },
-    { id: "f5-4", type: "friend-4", spawn: { x: 1250, y: 544 } },
-    { id: "f5-5", type: "friend-5", spawn: { x: 1550, y: 544 } },
-    { id: "f5-6", type: "friend-6", spawn: { x: 1850, y: 544 } },
-    { id: "f5-7", type: "friend-7", spawn: { x: 2050, y: 544 } },
-    { id: "f5-8", type: "friend-8", spawn: { x: 2300, y: 544 } }
-  ],
+  // НЕТ массива friends — Friends здесь появляются только через FinaleController
+  // после BOSS_DEFEATED.
   boss: { x: 2100, y: 448 },
   bossTraps: [
+    // Boss статичен на x 2100..2228, y 448..640.
+    // damageZone каждой ловушки реально пересекает AABB Boss-а.
+    // Значение damage НЕ указано — LevelManager берёт его из BOSS_CONFIG
+    // (health.max / requiredTrapHits = 10 / 5 = 2).
     {
       id: "boss-trap-01",
       trigger: { x: 300, y: 560, width: 80, height: 80 },
-      damageZone: { x: 900, y: 500, width: 160, height: 140 },
-      damage: 2, activeDurationMs: 350, rearmMs: 1500
+      damageZone: { x: 2060, y: 440, width: 200, height: 220 },
+      activeDurationMs: 350, rearmMs: 1500
     },
     {
       id: "boss-trap-02",
       trigger: { x: 1300, y: 560, width: 80, height: 80 },
-      damageZone: { x: 1900, y: 460, width: 200, height: 180 },
-      damage: 2, activeDurationMs: 350, rearmMs: 1500
+      damageZone: { x: 2080, y: 460, width: 200, height: 200 },
+      activeDurationMs: 350, rearmMs: 1500
     },
     {
       id: "boss-trap-03",
       trigger: { x: 700, y: 560, width: 80, height: 80 },
-      damageZone: { x: 1600, y: 480, width: 200, height: 160 },
-      damage: 2, activeDurationMs: 350, rearmMs: 1500
+      damageZone: { x: 2100, y: 440, width: 200, height: 200 },
+      activeDurationMs: 350, rearmMs: 1500
     }
   ]
 };

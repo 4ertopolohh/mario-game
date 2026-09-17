@@ -2,8 +2,13 @@ import { Character } from "./Character.js";
 import { FRIEND_BASE_CONFIG, FRIEND_CONFIG_BY_TYPE } from "../config/friends.config.js";
 
 /**
- * Мирный к Player, агрессивный к обычным enemy-1/2/3.
- * Не атакует Boss, не получает stomp damage и не наносит его.
+ * Союзник Player-а.
+ *  - Агрессивен только к обычным enemy-1/2/3.
+ *  - Не атакует Player, не атакует Boss.
+ *  - Урон Enemy-у наносится исключительно stomp-ом сверху.
+ *    Само физическое определение stomp происходит в CollisionManager,
+ *    Friend лишь формирует намерение движения и прыжка.
+ *  - В финале скриптованно двигается FinaleController-ом без физики.
  */
 export class Friend extends Character {
   /**
@@ -17,7 +22,6 @@ export class Friend extends Character {
       size: { ...FRIEND_BASE_CONFIG.size, ...(typeConfig.size || {}) },
       health: { ...FRIEND_BASE_CONFIG.health, ...(typeConfig.health || {}) },
       movement: { ...FRIEND_BASE_CONFIG.movement, ...(typeConfig.movement || {}) },
-      combat: { ...FRIEND_BASE_CONFIG.combat, ...(typeConfig.combat || {}) },
       appearance: typeConfig.appearance || {},
       audio: typeConfig.audio || {},
       nickname: typeConfig.nickname || "",
@@ -31,9 +35,8 @@ export class Friend extends Character {
 
     this.applyGravity = true;
     this.speed = merged.movement.speed;
-    this.damage = merged.combat.damage;
-    this.attackCooldownMs = merged.combat.attackCooldownMs;
-    this.attackCooldownRemaining = 0;
+    this.jumpVelocity = merged.movement.jumpVelocity;
+    this.stompBounceVelocity = merged.movement.stompBounceVelocity;
 
     this.x = spawnConfig.spawn.x;
     this.y = spawnConfig.spawn.y;
@@ -47,10 +50,7 @@ export class Friend extends Character {
     this._holdX = 0;
   }
 
-  /**
-   * Зафиксировать Friend на конкретной X (используется финалом).
-   * @param {number} x
-   */
+  /** Фиксация X в скриптованных сценах (используется при необходимости). */
   holdAt(x) {
     this._holdPosition = true;
     this._holdX = x;
@@ -80,12 +80,8 @@ export class Friend extends Character {
       }
     }
 
-    if (this.attackCooldownRemaining > 0) {
-      this.attackCooldownRemaining -= dt * 1000;
-      if (this.attackCooldownRemaining < 0) this.attackCooldownRemaining = 0;
-    }
-
-    // Финал: удержание позиции
+    // Скриптованное удержание позиции (финал использует FinaleController напрямую,
+    // но контракт остаётся).
     if (this._holdPosition) {
       const dx = this._holdX - this.x;
       if (Math.abs(dx) <= 1) {
@@ -100,6 +96,7 @@ export class Friend extends Character {
 
     const camera = ctx && ctx.camera;
     if (camera && !camera.isVisible(this.rect)) {
+      // Вне симуляционной зоны — не тратим вычисления.
       this.vx = 0;
       return;
     }
@@ -113,30 +110,34 @@ export class Friend extends Character {
     const myCx = this.x + this.width / 2;
     const enCx = enemy.x + enemy.width / 2;
     const dx = enCx - myCx;
+    const dist = Math.abs(dx);
 
-    if (Math.abs(dx) < 6) {
-      this.vx = 0;
+    // Разворот к цели
+    if (dist > 4) this.facing = Math.sign(dx);
+
+    // Упёрлись в стену — прыгаем, чтобы попытаться преодолеть препятствие.
+    if (this.hitWallX) {
+      this.hitWallX = false;
+      if (this.isGrounded) {
+        this.vy = this.jumpVelocity;
+        this.isGrounded = false;
+      }
+    }
+
+    // Прыжок-намерение: если враг близко по горизонтали и Friend на земле.
+    // Сам stomp определит CollisionManager через prevBottom + vy > 0.
+    if (this.isGrounded && dist > 6 && dist < 140) {
+      this.vy = this.jumpVelocity;
+      this.isGrounded = false;
+    }
+
+    // Горизонтальное преследование
+    if (dist > 8) {
+      const mul = dist < 40 ? 0.5 : 1;
+      this.vx = Math.sign(dx) * this.speed * mul;
     } else {
-      this.vx = Math.sign(dx) * this.speed;
-      this.facing = Math.sign(dx);
+      this.vx = 0;
     }
-
-    if (this.attackCooldownRemaining <= 0 && this._overlaps(this.rect, enemy.rect)) {
-      this.attackCooldownRemaining = this.attackCooldownMs;
-      if (typeof enemy.takeDamage === "function") {
-        enemy.takeDamage(this.damage);
-      }
-      if (ctx && ctx.eventBus && !enemy.alive) {
-        ctx.eventBus.emit("ENEMY_DEFEATED", { enemy });
-      }
-    }
-  }
-
-  _overlaps(a, b) {
-    return a.x < b.x + b.width &&
-           a.x + a.width > b.x &&
-           a.y < b.y + b.height &&
-           a.y + a.height > b.y;
   }
 
   _findNearestEnemy(entities) {

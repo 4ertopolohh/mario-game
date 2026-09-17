@@ -2,17 +2,28 @@
  * Конфигурация всех 8 типов Friend.
  * У Friend НЕТ damage-звука; есть только один spawn-звук.
  * Соглашения по структуре совпадают с enemies.config.js.
+ *
+ * Механика появления:
+ *  - На Levels 1–4 при нормальном входе на уровень выполняется один roll.
+ *    С вероятностью FRIEND_RANDOM_SPAWN.chance появляется ровно один Friend.
+ *  - На Levels, перечисленных в FRIEND_RANDOM_SPAWN.disabledLevelIds (Level 5),
+ *    roll не выполняется — там друзья появляются только в финале.
  */
 
 export const FRIEND_BASE_CONFIG = {
   size: { width: 64, height: 96 },
   health: { max: 1 },
-  movement: { speed: 180 },
-  combat: {
-    damage: 0.5,
-    attackCooldownMs: 600
+  movement: {
+    speed: 180,
+    jumpVelocity: -700,
+    stompBounceVelocity: -420
   }
 };
+
+export const FRIEND_RANDOM_SPAWN = Object.freeze({
+  chance: 0.10,
+  disabledLevelIds: [5]
+});
 
 function buildFriendConfig(n, nickname) {
   return {
@@ -21,7 +32,6 @@ function buildFriendConfig(n, nickname) {
     size: { ...FRIEND_BASE_CONFIG.size },
     health: { ...FRIEND_BASE_CONFIG.health },
     movement: { ...FRIEND_BASE_CONFIG.movement },
-    combat: { ...FRIEND_BASE_CONFIG.combat },
     appearance: {
       headTexture: `./assets/images/friends/type-${n}/head.webp`,
       bodyTexture: `./assets/images/friends/type-${n}/body.webp`

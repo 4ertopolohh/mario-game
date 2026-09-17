@@ -4,7 +4,7 @@ import { EnemyType1 } from "../entities/EnemyType1.js";
 import { EnemyType2 } from "../entities/EnemyType2.js";
 import { EnemyType3 } from "../entities/EnemyType3.js";
 import { createFriend } from "../entities/Friend.js";
-import { FRIEND_CONFIG_BY_TYPE, FRIEND_TYPES_ORDERED } from "../config/friends.config.js";
+import { FRIEND_CONFIG_BY_TYPE, FRIEND_TYPES_ORDERED, FRIEND_RANDOM_SPAWN } from "../config/friends.config.js";
 import { Boss } from "../entities/Boss.js";
 import { Trap } from "../entities/Trap.js";
 import { PLAYER_CONFIG } from "../config/player.config.js";
@@ -15,6 +15,7 @@ import { TRAP_DEFAULT_CONFIG } from "../config/traps.config.js";
 import { GameEvents } from "../core/EventBus.js";
 import { Logger } from "../utils/Logger.js";
 import { GameState } from "../core/GameState.js";
+import { intersects } from "../utils/aabb.js";
 
 export class LevelManager {
   constructor(game) {
@@ -28,6 +29,13 @@ export class LevelManager {
     this.resourceManager = game.resourceManager;
     this.entityManager = game.entityManager;
     this.eventBus = game.eventBus;
+
+    /**
+     * Результат последнего random roll.
+     * Структура: { levelId:number, spawn:boolean, type:string|null }.
+     * Переиспользуется при restart того же уровня.
+     */
+    this._randomFriendState = null;
   }
 
   getLevelConfig(id) {
@@ -46,7 +54,11 @@ export class LevelManager {
     this.currentLevelId = levelId;
     this.currentLevel = { ...cfg, traps: [] };
 
-    await this._preloadLevelAssets(cfg);
+    // Случайный Friend roll — до preload, чтобы включить его ассеты.
+    const friendDecision = this._getOrCreateRandomFriendDecision(levelId, isRestart);
+    const friendTypeToPreload = friendDecision.spawn ? friendDecision.type : null;
+
+    await this._preloadLevelAssets(cfg, friendTypeToPreload);
 
     // Player
     const player = new Player(PLAYER_CONFIG);
@@ -56,7 +68,7 @@ export class LevelManager {
     this.player = player;
     this.entityManager.add(player);
 
-    // Enemies
+    // Enemies (обычные)
     for (const spawn of (cfg.enemies || [])) {
       let e;
       if (spawn.type === "enemy1") e = new EnemyType1(spawn);
@@ -67,12 +79,17 @@ export class LevelManager {
       this.entityManager.add(e);
     }
 
-    // Friends
-    for (const spawn of (cfg.friends || [])) {
-      const f = createFriend(spawn.type, spawn);
-      if (!f) continue;
-      f.setResourceManager(this.resourceManager);
-      this.entityManager.add(f);
+    // Случайный Friend (Levels 1–4, 10%, максимум один)
+    if (friendDecision.spawn && friendDecision.type) {
+      const spawnPos = this._findSafeFriendSpawn(cfg);
+      const f = createFriend(friendDecision.type, {
+        id: `random-friend-${levelId}-${friendDecision.type}`,
+        spawn: spawnPos
+      });
+      if (f) {
+        f.setResourceManager(this.resourceManager);
+        this.entityManager.add(f);
+      }
     }
 
     // Boss
@@ -83,15 +100,15 @@ export class LevelManager {
       this.boss = boss;
     }
 
-    // Traps: damage = boss.max / requiredTrapHits
-    if (cfg.bossTraps) {
+    // Traps. Единый источник истины — BOSS_CONFIG: damage = max / requiredTrapHits.
+    if (cfg.bossTraps && cfg.bossTraps.length > 0) {
       const requiredHits = BOSS_CONFIG.requiredTrapHits || 5;
       const computedDamage = BOSS_CONFIG.health.max / requiredHits;
       for (const t of cfg.bossTraps) {
         const trap = new Trap({
           ...TRAP_DEFAULT_CONFIG,
           ...t,
-          damage: typeof t.damage === "number" ? t.damage : computedDamage,
+          damage: computedDamage,
           appearance: {
             ...TRAP_DEFAULT_CONFIG.appearance,
             ...(t.appearance || {})
@@ -119,13 +136,82 @@ export class LevelManager {
       this.audioManager.ensureMusic(cfg.music, `level:${levelId}`);
     }
 
-    // Фоновая подгрузка остальных уровней
     this._preloadRemainingLevels();
 
     return true;
   }
 
-  async _preloadLevelAssets(cfg) {
+  // ---------------------------------------------------------------------------
+  // Random Friend helper (Levels 1–4, 10%, без reroll при restart)
+  // ---------------------------------------------------------------------------
+
+  _getOrCreateRandomFriendDecision(levelId, isRestart) {
+    if (isRestart &&
+        this._randomFriendState &&
+        this._randomFriendState.levelId === levelId) {
+      return this._randomFriendState;
+    }
+    const state = this._rollRandomFriend(levelId);
+    this._randomFriendState = state;
+    return state;
+  }
+
+  _rollRandomFriend(levelId) {
+    if (FRIEND_RANDOM_SPAWN.disabledLevelIds.includes(levelId)) {
+      return { levelId, spawn: false, type: null };
+    }
+    if (Math.random() < FRIEND_RANDOM_SPAWN.chance) {
+      const idx = Math.floor(Math.random() * FRIEND_TYPES_ORDERED.length);
+      return { levelId, spawn: true, type: FRIEND_TYPES_ORDERED[idx] };
+    }
+    return { levelId, spawn: false, type: null };
+  }
+
+  _findSafeFriendSpawn(cfg) {
+    const baseX = (cfg.playerSpawn && cfg.playerSpawn.x) || 120;
+    const baseY = (cfg.playerSpawn && cfg.playerSpawn.y) || 500;
+
+    const candidates = [
+      { x: baseX + 240, y: baseY },
+      { x: baseX + 400, y: baseY },
+      { x: baseX - 200, y: baseY }
+    ];
+    const W = 64, H = 96;
+    for (const c of candidates) {
+      if (c.x < 40) continue;
+      if (c.x + W > cfg.world.width - 40) continue;
+      if (this._isSpotBlocked(c, W, H, cfg)) continue;
+      return { x: c.x, y: c.y };
+    }
+    return { x: baseX + 240, y: baseY };
+  }
+
+  _isSpotBlocked(pos, w, h, cfg) {
+    const r = { x: pos.x, y: pos.y, width: w, height: h };
+    if (cfg.platforms) {
+      for (const p of cfg.platforms) {
+        if (p.type !== "solid") continue;
+        if (intersects(r, p)) return true;
+      }
+    }
+    if (cfg.obstacles) {
+      for (const o of cfg.obstacles) {
+        if (intersects(r, o)) return true;
+      }
+    }
+    if (cfg.hazards) {
+      for (const hz of cfg.hazards) {
+        if (intersects(r, hz)) return true;
+      }
+    }
+    return false;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Asset preload
+  // ---------------------------------------------------------------------------
+
+  async _preloadLevelAssets(cfg, randomFriendType = null) {
     const paths = [];
 
     if (PLAYER_CONFIG.appearance) {
@@ -137,10 +223,9 @@ export class LevelManager {
     if (typesUsed.has("enemy2")) paths.push(ENEMY_TYPE_2_CONFIG.appearance.headTexture, ENEMY_TYPE_2_CONFIG.appearance.bodyTexture);
     if (typesUsed.has("enemy3")) paths.push(ENEMY_TYPE_3_CONFIG.appearance.headTexture, ENEMY_TYPE_3_CONFIG.appearance.bodyTexture);
 
-    // Friends
-    const friendTypes = new Set((cfg.friends || []).map(f => f.type));
-    for (const t of friendTypes) {
-      const fc = FRIEND_CONFIG_BY_TYPE[t];
+    // Assets случайного Friend-а (если он будет создан).
+    if (randomFriendType) {
+      const fc = FRIEND_CONFIG_BY_TYPE[randomFriendType];
       if (fc && fc.appearance) {
         paths.push(fc.appearance.headTexture, fc.appearance.bodyTexture);
       }
@@ -153,12 +238,10 @@ export class LevelManager {
       }
     }
 
-    // Trap texture
     if (cfg.bossTraps && cfg.bossTraps.length > 0) {
       paths.push(TRAP_DEFAULT_CONFIG.appearance.texture);
     }
 
-    // Hazard textures
     if (cfg.hazards) {
       for (const h of cfg.hazards) {
         if (h.texture) paths.push(h.texture);
@@ -169,7 +252,6 @@ export class LevelManager {
 
     await this.resourceManager.loadImages(paths);
 
-    // Аудио грузится асинхронно, чтобы не задерживать старт уровня.
     const audios = [];
     if (PLAYER_CONFIG.audio) {
       if (PLAYER_CONFIG.audio.damage) audios.push(PLAYER_CONFIG.audio.damage);
@@ -187,8 +269,8 @@ export class LevelManager {
         if (conf.audio.extra) for (const v of Object.values(conf.audio.extra)) if (v) audios.push(v);
       }
     }
-    for (const t of friendTypes) {
-      const fc = FRIEND_CONFIG_BY_TYPE[t];
+    if (randomFriendType) {
+      const fc = FRIEND_CONFIG_BY_TYPE[randomFriendType];
       if (fc && fc.audio && fc.audio.spawn) audios.push(fc.audio.spawn);
     }
     if (cfg.boss && BOSS_CONFIG.audio) {
@@ -210,11 +292,6 @@ export class LevelManager {
           if (typesUsed.has("enemy1")) paths.push(ENEMY_TYPE_1_CONFIG.appearance.headTexture, ENEMY_TYPE_1_CONFIG.appearance.bodyTexture);
           if (typesUsed.has("enemy2")) paths.push(ENEMY_TYPE_2_CONFIG.appearance.headTexture, ENEMY_TYPE_2_CONFIG.appearance.bodyTexture);
           if (typesUsed.has("enemy3")) paths.push(ENEMY_TYPE_3_CONFIG.appearance.headTexture, ENEMY_TYPE_3_CONFIG.appearance.bodyTexture);
-          const friendTypes = new Set((lvl.friends || []).map(f => f.type));
-          for (const t of friendTypes) {
-            const fc = FRIEND_CONFIG_BY_TYPE[t];
-            if (fc && fc.appearance) paths.push(fc.appearance.headTexture, fc.appearance.bodyTexture);
-          }
           if (lvl.boss) paths.push(BOSS_CONFIG.appearance.headTexture, BOSS_CONFIG.appearance.bodyTexture);
           await this.resourceManager.loadImages(paths);
         }

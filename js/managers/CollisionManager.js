@@ -111,11 +111,25 @@ export class CollisionManager {
     }
   }
 
+  /**
+   * Единый критерий stomp-а: атакующий падает вниз, и его предыдущий нижний
+   * край был около/над верхней гранью цели. Используется Player-ом и Friend-ом.
+   */
+  _isStomp(attacker, target) {
+    const prevBottom = (attacker.prevY ?? attacker.y) + attacker.height;
+    return attacker.vy > 0 &&
+           prevBottom <= target.y + GAME_CONFIG.stompTolerance;
+  }
+
+  /**
+   * @returns {{damageCandidates:number[], bossDamage:number, levelComplete:boolean}}
+   */
   resolveEntityInteractions(ctx) {
-    const { player, enemies, boss, projectiles, level, audioManager, eventBus } = ctx;
+    const { player, enemies, friends, boss, projectiles, level, audioManager, eventBus } = ctx;
     const result = { damageCandidates: [], bossDamage: 0, levelComplete: false };
     if (!player || !player.alive) return result;
 
+    // Player vs hazards
     if (level.hazards) {
       for (const h of level.hazards) {
         if (intersects(player.rect, h)) {
@@ -125,13 +139,11 @@ export class CollisionManager {
       }
     }
 
+    // Player vs enemies (stomp / contact damage)
     for (const enemy of enemies) {
       if (!enemy.alive) continue;
       if (!intersects(player.rect, enemy.rect)) continue;
-      const prevBottom = (player.prevY ?? player.y) + player.height;
-      const stomp = player.vy > 0 &&
-                    prevBottom <= enemy.y + GAME_CONFIG.stompTolerance;
-      if (stomp) {
+      if (this._isStomp(player, enemy)) {
         enemy.takeDamage(enemy.maxHealth);
         player.vy = player.movement.stompBounceVelocity;
         player.isGrounded = false;
@@ -144,10 +156,32 @@ export class CollisionManager {
       }
     }
 
+    // Friend vs enemies (только stomp, друзья не наносят боковой урон)
+    if (friends && friends.length > 0) {
+      for (const friend of friends) {
+        if (!friend.alive) continue;
+        for (const enemy of enemies) {
+          if (!enemy.alive) continue;
+          if (!intersects(friend.rect, enemy.rect)) continue;
+          if (!this._isStomp(friend, enemy)) continue;
+          enemy.takeDamage(enemy.maxHealth);
+          const bounce = friend.stompBounceVelocity ?? -420;
+          friend.vy = bounce;
+          friend.isGrounded = false;
+          if (audioManager && enemy.audio && enemy.audio.damage) {
+            audioManager.play(enemy.audio.damage);
+          }
+          if (eventBus) eventBus.emit(GameEvents.ENEMY_DEFEATED, { enemy });
+        }
+      }
+    }
+
+    // Player vs boss
     if (boss && boss.alive && intersects(player.rect, boss.rect)) {
       result.damageCandidates.push(boss.contactDamage || GAME_CONFIG.damage.bossContact);
     }
 
+    // Player vs projectiles
     for (const proj of projectiles) {
       if (!proj.alive) continue;
       if (intersects(player.rect, proj.rect)) {
@@ -156,6 +190,7 @@ export class CollisionManager {
       }
     }
 
+    // Projectiles vs environment
     for (const proj of projectiles) {
       if (!proj.alive) continue;
       let hit = false;
@@ -171,10 +206,12 @@ export class CollisionManager {
       if (hit) proj.alive = false;
     }
 
+    // Player vs exit (levels 1-4)
     if (level.exit && player.alive) {
       if (intersects(player.rect, level.exit)) result.levelComplete = true;
     }
 
+    // Traps vs boss
     if (boss && boss.alive && level.traps) {
       for (const trap of level.traps) {
         const dmg = trap.tryDamageBoss(boss);
@@ -187,6 +224,7 @@ export class CollisionManager {
       }
     }
 
+    // Kill plane
     if (player.y > level.world.height + 200) {
       player.setSpawn(player.spawnX, player.spawnY);
       player.vx = 0; player.vy = 0;

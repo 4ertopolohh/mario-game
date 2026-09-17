@@ -6,6 +6,7 @@ import { FRIEND_TYPES_ORDERED } from "../config/friends.config.js";
 /**
  * Финальная праздничная сцена после BOSS_DEFEATED.
  * Игнорирует collision и физику: управляет персонажами прямо.
+ * Friends двигаются скриптованно, сквозь любую геометрию.
  */
 export class FinaleController {
   /**
@@ -67,7 +68,7 @@ export class FinaleController {
     player.vy = 0;
     this._snapToGround(player, level);
 
-    // === Friends: движение к целевым X ===
+    // === Friends: движение к целевым X сквозь препятствия ===
     let allArrived = true;
     for (const slot of this.friendSlots) {
       const f = slot.friend;
@@ -80,7 +81,7 @@ export class FinaleController {
         allArrived = false;
       } else {
         f.x = slot.targetX;
-        // Разворот к Player после прибытия
+        // Разворот лицом к Player после прибытия
         f.facing = player.x < f.x ? -1 : 1;
       }
       f.vx = 0;
@@ -111,6 +112,10 @@ export class FinaleController {
     entity.y = ground.y - entity.height;
   }
 
+  /**
+   * Спавн 8 Friends. Первые 4 — слева, последние 4 — справа.
+   * Детерминированно, без Math.random для стороны.
+   */
   _ensureAllFriends() {
     const game = this.game;
     const level = game.levelManager.currentLevel;
@@ -119,21 +124,27 @@ export class FinaleController {
     const existing = game.entityManager.entities.filter(e => e.alive && e.isFriend);
     const existingTypes = new Set(existing.map(f => f.friendType));
 
-    for (const typeKey of FRIEND_TYPES_ORDERED) {
+    const total = FRIEND_TYPES_ORDERED.length;
+    const half = Math.floor(total / 2);
+
+    for (let idx = 0; idx < total; idx++) {
+      const typeKey = FRIEND_TYPES_ORDERED[idx];
       if (existingTypes.has(typeKey)) continue;
-      const side = Math.random() < 0.5 ? 1 : -1;
-      const spawnX = side < 0 ? 60 : level.world.width - 160;
+      const spawnLeft = idx < half;
+      const spawnX = spawnLeft ? 60 : level.world.width - 160;
       const f = createFriend(typeKey, {
         id: `finale-${typeKey}`,
         spawn: { x: spawnX, y: player.y }
       });
       if (!f) continue;
       f.setResourceManager(game.resourceManager);
-      // Friend сразу «оживёт» в следующем кадре: spawn sound проиграет в update.
       game.entityManager.add(f);
     }
   }
 
+  /**
+   * Симметричные 4 слева / 4 справа. Позиции: -1,-2,-3,-4 и +1,+2,+3,+4 шагов.
+   */
   _buildSlots() {
     const game = this.game;
     const player = game.player;
@@ -143,11 +154,19 @@ export class FinaleController {
 
     const spacing = FINALE_CONFIG.friendSpacing;
     const centerX = this.playerTargetX + player.width / 2;
+    const total = friends.length;
+    const half = Math.floor(total / 2);
     const slots = [];
-    for (let i = 0; i < friends.length; i++) {
-      // 0 -> right +1; 1 -> left -1; 2 -> right +2; ...
-      const side = i % 2 === 0 ? 1 : -1;
-      const ring = Math.floor(i / 2) + 1;
+
+    for (let i = 0; i < total; i++) {
+      let side, ring;
+      if (i < half) {
+        side = -1;
+        ring = i + 1;
+      } else {
+        side = 1;
+        ring = i - half + 1;
+      }
       const targetCenterX = centerX + side * spacing * ring;
       slots.push({
         friend: friends[i],
