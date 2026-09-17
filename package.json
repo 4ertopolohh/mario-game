@@ -1,0 +1,19 @@
+{
+  "name": "mario-game",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vanilla JavaScript browser platformer",
+  "scripts": {
+    "prepare-pages": "node scripts/prepare-pages.mjs",
+    "predeploy": "npm run prepare-pages",
+    "deploy": "gh-pages -d dist -b gh-pages -r https://github.com/4ertopolohh/mario-game.git --nojekyll"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/4ertopolohh/mario-game.git"
+  },
+  "homepage": "https://4ertopolohh.github.io/mario-game/",
+  "devDependencies": {
+    "gh-pages": "6.3.0"
+  }
+}

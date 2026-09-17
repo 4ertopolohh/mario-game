@@ -10,17 +10,36 @@ export class ResourceManager {
 
   loadImage(path) {
     if (!path) return Promise.resolve(null);
-    if (this.images.has(path)) return this.images.get(path);
+
+    const cached = this.images.get(path);
+
+    if (cached) {
+      return cached instanceof Promise
+        ? cached
+        : Promise.resolve(cached);
+    }
+
     const p = new Promise((resolve) => {
       const img = new Image();
-      img.onload = () => resolve(img);
+
+      img.onload = () => {
+        this.images.set(path, img);
+        resolve(img);
+      };
+
       img.onerror = () => {
+        this.images.delete(path);
         Logger.warn(`Image failed: ${path}`);
-        this.eventBus.emit(GameEvents.ASSET_FAILED, { type: "image", path });
+        this.eventBus.emit(GameEvents.ASSET_FAILED, {
+          type: "image",
+          path
+        });
         resolve(null);
       };
+
       img.src = path;
     });
+
     this.images.set(path, p);
     return p;
   }
@@ -28,61 +47,108 @@ export class ResourceManager {
   /** @returns {HTMLImageElement|null} sync access to loaded image */
   getImage(path) {
     if (!path) return null;
-    const v = this.images.get(path);
-    return v instanceof Promise ? null : v;
+
+    const value = this.images.get(path);
+
+    if (!value || value instanceof Promise) {
+      return null;
+    }
+
+    return value;
   }
 
   loadImages(paths) {
     const unique = [...new Set(paths.filter(Boolean))];
-    return Promise.all(unique.map(p => this.loadImage(p)));
+    return Promise.all(unique.map((path) => this.loadImage(path)));
   }
 
   loadAudio(path) {
     if (!path) return Promise.resolve(null);
-    if (this.audio.has(path)) return this.audio.get(path);
+
+    const cached = this.audio.get(path);
+
+    if (cached) {
+      return cached instanceof Promise
+        ? cached
+        : Promise.resolve(cached);
+    }
+
     const p = new Promise((resolve) => {
       let resolved = false;
+
       const done = (result) => {
         if (resolved) return;
         resolved = true;
-        if (result) resolve(result);
-        else {
-          Logger.warn(`Audio failed: ${path}`);
-          this.eventBus.emit(GameEvents.ASSET_FAILED, { type: "audio", path });
-          resolve(null);
+
+        if (result) {
+          this.audio.set(path, result);
+          resolve(result);
+          return;
         }
+
+        this.audio.delete(path);
+        Logger.warn(`Audio failed: ${path}`);
+        this.eventBus.emit(GameEvents.ASSET_FAILED, {
+          type: "audio",
+          path
+        });
+        resolve(null);
       };
+
       try {
         const audio = new Audio();
+
         audio.preload = "auto";
-        audio.addEventListener("canplaythrough", () => done(audio), { once: true });
-        audio.addEventListener("error", () => done(null), { once: true });
+
+        audio.addEventListener(
+          "canplaythrough",
+          () => done(audio),
+          { once: true }
+        );
+
+        audio.addEventListener(
+          "error",
+          () => done(null),
+          { once: true }
+        );
+
         audio.src = path;
-        // Fallback timeout
+
         setTimeout(() => {
-          if (!resolved) {
-            if (audio.readyState >= 2) done(audio);
-            else done(null);
+          if (resolved) return;
+
+          if (audio.readyState >= 2) {
+            done(audio);
+          } else {
+            done(null);
           }
         }, 4000);
-      } catch (e) {
-        Logger.warn("Audio construct failed", e);
+      } catch (error) {
+        Logger.warn("Audio construct failed", error);
         done(null);
       }
     });
+
     this.audio.set(path, p);
     return p;
   }
 
+  /** @returns {HTMLAudioElement|null} sync access to loaded audio */
   getAudio(path) {
     if (!path) return null;
-    const v = this.audio.get(path);
-    return v instanceof Promise ? null : v;
+
+    const value = this.audio.get(path);
+
+    if (!value || value instanceof Promise) {
+      return null;
+    }
+
+    return value;
   }
 
   loadAudios(paths) {
     const unique = [...new Set(paths.filter(Boolean))];
-    return Promise.all(unique.map(p => this.loadAudio(p)));
+    return Promise.all(unique.map((path) => this.loadAudio(path)));
   }
 
   clear() {
