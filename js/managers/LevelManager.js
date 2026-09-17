@@ -31,11 +31,19 @@ export class LevelManager {
     this.eventBus = game.eventBus;
 
     /**
-     * Результат последнего random roll.
-     * Структура: { levelId:number, spawn:boolean, type:string|null }.
+     * Кэш roll-а случайного Friend helper-а.
+     * Структура: { levelId, spawn:boolean, type:string|null }.
      * Переиспользуется при restart того же уровня.
      */
     this._randomFriendState = null;
+
+    /**
+     * Кэш разрешённых enemy-pool-ов.
+     * Структура: { levelId, resolvedEnemies: [...] }.
+     * Переиспользуется при restart того же уровня, чтобы layout врагов
+     * (в т.ч. результаты разрешения пулов типа) не менялся.
+     */
+    this._enemyLayoutState = null;
   }
 
   getLevelConfig(id) {
@@ -54,11 +62,13 @@ export class LevelManager {
     this.currentLevelId = levelId;
     this.currentLevel = { ...cfg, traps: [] };
 
-    // Случайный Friend roll — до preload, чтобы включить его ассеты.
+    // Friend roll и enemy pool resolution ДО preload — единый выбор для
+    // ассетов и для фактического создания сущностей.
     const friendDecision = this._getOrCreateRandomFriendDecision(levelId, isRestart);
     const friendTypeToPreload = friendDecision.spawn ? friendDecision.type : null;
+    const resolvedEnemies = this._resolveEnemyTypes(cfg.enemies || [], levelId, isRestart);
 
-    await this._preloadLevelAssets(cfg, friendTypeToPreload);
+    await this._preloadLevelAssets(cfg, friendTypeToPreload, resolvedEnemies);
 
     // Player
     const player = new Player(PLAYER_CONFIG);
@@ -68,8 +78,8 @@ export class LevelManager {
     this.player = player;
     this.entityManager.add(player);
 
-    // Enemies (обычные)
-    for (const spawn of (cfg.enemies || [])) {
+    // Enemies — из уже разрешённого массива (типы окончательные).
+    for (const spawn of resolvedEnemies) {
       let e;
       if (spawn.type === "enemy1") e = new EnemyType1(spawn);
       else if (spawn.type === "enemy2") e = new EnemyType2(spawn);
@@ -79,7 +89,7 @@ export class LevelManager {
       this.entityManager.add(e);
     }
 
-    // Случайный Friend (Levels 1–4, 10%, максимум один)
+    // Случайный Friend (Levels 1–5, 40%, максимум один)
     if (friendDecision.spawn && friendDecision.type) {
       const spawnPos = this._findSafeFriendSpawn(cfg);
       const f = createFriend(friendDecision.type, {
@@ -100,7 +110,7 @@ export class LevelManager {
       this.boss = boss;
     }
 
-    // Traps. Единый источник истины — BOSS_CONFIG: damage = max / requiredTrapHits.
+    // Traps. Единый источник истины — BOSS_CONFIG.
     if (cfg.bossTraps && cfg.bossTraps.length > 0) {
       const requiredHits = BOSS_CONFIG.requiredTrapHits || 5;
       const computedDamage = BOSS_CONFIG.health.max / requiredHits;
@@ -124,14 +134,12 @@ export class LevelManager {
 
     this.eventBus.emit(GameEvents.LEVEL_LOADED, { levelId, level: this.currentLevel });
 
-    // Level-enter звук — только при заходе на НОВЫЙ уровень
     if (!isRestart &&
         PLAYER_CONFIG.audio && PLAYER_CONFIG.audio.extra &&
         PLAYER_CONFIG.audio.extra.levelEntered) {
       this.audioManager.play(PLAYER_CONFIG.audio.extra.levelEntered);
     }
 
-    // Фоновая музыка: idempotent для того же уровня
     if (cfg.music) {
       this.audioManager.ensureMusic(cfg.music, `level:${levelId}`);
     }
@@ -142,7 +150,7 @@ export class LevelManager {
   }
 
   // ---------------------------------------------------------------------------
-  // Random Friend helper (Levels 1–4, 10%, без reroll при restart)
+  // Random Friend helper (Levels 1–5, 40%, без reroll при restart)
   // ---------------------------------------------------------------------------
 
   _getOrCreateRandomFriendDecision(levelId, isRestart) {
@@ -208,22 +216,51 @@ export class LevelManager {
   }
 
   // ---------------------------------------------------------------------------
+  // Enemy pool resolution
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Разрешает декларативные пулы типов врагов в конкретные типы.
+   *  - `spawn.type` может быть строкой ("enemy1") или массивом-пулом
+   *    (["enemy1","enemy2"]), из которого тип выбирается равновероятно.
+   *  - Результат кэшируется по levelId и переиспользуется при restart.
+   *  - При новом нормальном входе на уровень выполняется новый roll.
+   */
+  _resolveEnemyTypes(enemies, levelId, isRestart) {
+    if (isRestart &&
+        this._enemyLayoutState &&
+        this._enemyLayoutState.levelId === levelId) {
+      return this._enemyLayoutState.resolvedEnemies;
+    }
+    const resolved = enemies.map(spawn => {
+      const t = spawn.type;
+      if (Array.isArray(t) && t.length > 0) {
+        const pick = t[Math.floor(Math.random() * t.length)];
+        return { ...spawn, type: pick };
+      }
+      return spawn;
+    });
+    this._enemyLayoutState = { levelId, resolvedEnemies: resolved };
+    return resolved;
+  }
+
+  // ---------------------------------------------------------------------------
   // Asset preload
   // ---------------------------------------------------------------------------
 
-  async _preloadLevelAssets(cfg, randomFriendType = null) {
+  async _preloadLevelAssets(cfg, randomFriendType = null, resolvedEnemies = null) {
     const paths = [];
 
     if (PLAYER_CONFIG.appearance) {
       paths.push(PLAYER_CONFIG.appearance.headTexture, PLAYER_CONFIG.appearance.bodyTexture);
     }
 
-    const typesUsed = new Set((cfg.enemies || []).map(e => e.type));
+    const enemies = resolvedEnemies || cfg.enemies || [];
+    const typesUsed = new Set(enemies.map(e => e.type));
     if (typesUsed.has("enemy1")) paths.push(ENEMY_TYPE_1_CONFIG.appearance.headTexture, ENEMY_TYPE_1_CONFIG.appearance.bodyTexture);
     if (typesUsed.has("enemy2")) paths.push(ENEMY_TYPE_2_CONFIG.appearance.headTexture, ENEMY_TYPE_2_CONFIG.appearance.bodyTexture);
     if (typesUsed.has("enemy3")) paths.push(ENEMY_TYPE_3_CONFIG.appearance.headTexture, ENEMY_TYPE_3_CONFIG.appearance.bodyTexture);
 
-    // Assets случайного Friend-а (если он будет создан).
     if (randomFriendType) {
       const fc = FRIEND_CONFIG_BY_TYPE[randomFriendType];
       if (fc && fc.appearance) {
@@ -288,7 +325,14 @@ export class LevelManager {
         for (const lvl of LEVELS) {
           if (lvl.id === this.currentLevelId) continue;
           const paths = [];
-          const typesUsed = new Set((lvl.enemies || []).map(e => e.type));
+          const typesUsed = new Set();
+          for (const e of (lvl.enemies || [])) {
+            if (Array.isArray(e.type)) {
+              for (const t of e.type) typesUsed.add(t);
+            } else if (e.type) {
+              typesUsed.add(e.type);
+            }
+          }
           if (typesUsed.has("enemy1")) paths.push(ENEMY_TYPE_1_CONFIG.appearance.headTexture, ENEMY_TYPE_1_CONFIG.appearance.bodyTexture);
           if (typesUsed.has("enemy2")) paths.push(ENEMY_TYPE_2_CONFIG.appearance.headTexture, ENEMY_TYPE_2_CONFIG.appearance.bodyTexture);
           if (typesUsed.has("enemy3")) paths.push(ENEMY_TYPE_3_CONFIG.appearance.headTexture, ENEMY_TYPE_3_CONFIG.appearance.bodyTexture);

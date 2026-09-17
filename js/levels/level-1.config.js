@@ -25,7 +25,8 @@ export const LEVEL_1 = {
   enemies: [
     { id: "e1-1", type: "enemy1", spawn: { x: 900, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 900, y: 544 }, { x: 1250, y: 544 }] } },
     { id: "e1-2", type: "enemy2", spawn: { x: 1650, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 1650, y: 544 }, { x: 2000, y: 544 }] } },
-    { id: "e1-3", type: "enemy3", spawn: { x: 2350, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2350, y: 544 }, { x: 2750, y: 544 }] } }
+    // Enemy Type 3 запрещён на Level 1. Пул равновероятно даёт enemy1/enemy2.
+    { id: "e1-3", type: ["enemy1", "enemy2"], spawn: { x: 2350, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2350, y: 544 }, { x: 2750, y: 544 }] } }
   ],
   exit: { x: 3080, y: 0, width: 80, height: 720 }
 };

@@ -1,13 +1,16 @@
 /**
- * Конфигурация всех 8 типов Friend.
+ * Конфигурация всех 12 типов Friend.
  * У Friend НЕТ damage-звука; есть только один spawn-звук.
  * Соглашения по структуре совпадают с enemies.config.js.
  *
  * Механика появления:
- *  - На Levels 1–4 при нормальном входе на уровень выполняется один roll.
+ *  - На каждом уровне (1–5) при нормальном входе выполняется один roll.
  *    С вероятностью FRIEND_RANDOM_SPAWN.chance появляется ровно один Friend.
- *  - На Levels, перечисленных в FRIEND_RANDOM_SPAWN.disabledLevelIds (Level 5),
- *    roll не выполняется — там друзья появляются только в финале.
+ *  - Максимум один Friend helper на уровень.
+ *  - Результат roll-а кэшируется LevelManager-ом и переиспользуется при restart
+ *    того же уровня, чтобы layout не менялся.
+ *  - Если на Level 5 helper уже появился, FinaleController НЕ создаёт дубликат
+ *    этого типа — 12 уникальных типов присутствуют в финале ровно по одному.
  */
 
 export const FRIEND_BASE_CONFIG = {
@@ -21,8 +24,8 @@ export const FRIEND_BASE_CONFIG = {
 };
 
 export const FRIEND_RANDOM_SPAWN = Object.freeze({
-  chance: 0.10,
-  disabledLevelIds: [5]
+  chance: 0.40,
+  disabledLevelIds: []
 });
 
 function buildFriendConfig(n, nickname) {
@@ -50,6 +53,10 @@ export const FRIEND_TYPE_5_CONFIG = buildFriendConfig(5, "Друг 5");
 export const FRIEND_TYPE_6_CONFIG = buildFriendConfig(6, "Друг 6");
 export const FRIEND_TYPE_7_CONFIG = buildFriendConfig(7, "Друг 7");
 export const FRIEND_TYPE_8_CONFIG = buildFriendConfig(8, "Друг 8");
+export const FRIEND_TYPE_9_CONFIG = buildFriendConfig(9, "Друг 9");
+export const FRIEND_TYPE_10_CONFIG = buildFriendConfig(10, "Друг 10");
+export const FRIEND_TYPE_11_CONFIG = buildFriendConfig(11, "Друг 11");
+export const FRIEND_TYPE_12_CONFIG = buildFriendConfig(12, "Друг 12");
 
 export const FRIEND_CONFIG_BY_TYPE = Object.freeze({
   "friend-1": FRIEND_TYPE_1_CONFIG,
@@ -59,10 +66,15 @@ export const FRIEND_CONFIG_BY_TYPE = Object.freeze({
   "friend-5": FRIEND_TYPE_5_CONFIG,
   "friend-6": FRIEND_TYPE_6_CONFIG,
   "friend-7": FRIEND_TYPE_7_CONFIG,
-  "friend-8": FRIEND_TYPE_8_CONFIG
+  "friend-8": FRIEND_TYPE_8_CONFIG,
+  "friend-9": FRIEND_TYPE_9_CONFIG,
+  "friend-10": FRIEND_TYPE_10_CONFIG,
+  "friend-11": FRIEND_TYPE_11_CONFIG,
+  "friend-12": FRIEND_TYPE_12_CONFIG
 });
 
 export const FRIEND_TYPES_ORDERED = Object.freeze([
   "friend-1", "friend-2", "friend-3", "friend-4",
-  "friend-5", "friend-6", "friend-7", "friend-8"
+  "friend-5", "friend-6", "friend-7", "friend-8",
+  "friend-9", "friend-10", "friend-11", "friend-12"
 ]);

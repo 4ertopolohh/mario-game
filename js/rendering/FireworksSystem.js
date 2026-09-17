@@ -2,7 +2,12 @@ import { FINALE_CONFIG } from "../config/finale.config.js";
 
 /**
  * Пиксельные салюты: ракеты + частицы.
- * Работает в мировых координатах, обновляется через update(dt).
+ *  - Каждая ракета летит снизу вверх к индивидуальному targetY.
+ *  - Взрыв при достижении targetY (или остановке, или истечении lifeMs).
+ *  - Частицы: радиальный разлёт, gravity, drag, затухание alpha, уменьшение размера.
+ *  - Яркий glow через globalCompositeOperation = "lighter" с save/restore.
+ *  - Высоты и интервалы — responsive относительно текущего viewport.
+ *  - Массивы ракет/частиц очищаются от погибших — рост ограничен.
  */
 export class FireworksSystem {
   constructor(config = FINALE_CONFIG.fireworks) {
@@ -36,27 +41,32 @@ export class FireworksSystem {
     this.spawnTimer -= dt * 1000;
     if (this.spawnTimer <= 0) {
       const base = this.config.spawnIntervalMs;
-      this.spawnTimer = base * (0.55 + Math.random() * 0.7);
+      this.spawnTimer = base * (0.55 + Math.random() * 0.9);
       this._spawnRocket(camera);
     }
 
     // Ракеты
+    const rg = this.config.rocketGravity;
     for (let i = this.rockets.length - 1; i >= 0; i--) {
       const r = this.rockets[i];
-      r.vy += this.config.gravity * dt;
+      r.vy += rg * dt;
       r.x += r.vx * dt;
       r.y += r.vy * dt;
       r.lifeMs -= dt * 1000;
-      if (r.vy >= -30 || r.lifeMs <= 0) {
+      if (r.y <= r.targetY || r.vy >= 0 || r.lifeMs <= 0) {
         this._explode(r);
         this.rockets.splice(i, 1);
       }
     }
 
     // Частицы
+    const pg = this.config.particleGravity;
+    const drag = this.config.particleDrag;
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
-      p.vy += this.config.particleGravity * dt;
+      p.vy += pg * dt;
+      p.vx *= drag;
+      p.vy *= drag;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       p.lifeMs -= dt * 1000;
@@ -64,53 +74,87 @@ export class FireworksSystem {
     }
   }
 
-  /**
-   * @param {CanvasRenderingContext2D} ctx
-   */
   render(ctx) {
     if (!this.active) return;
 
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
     // Ракеты
     for (const r of this.rockets) {
+      ctx.globalAlpha = 0.35;
       ctx.fillStyle = r.color;
-      ctx.fillRect(Math.round(r.x) - 2, Math.round(r.y) - 8, 4, 8);
+      ctx.fillRect(Math.round(r.x) - 4, Math.round(r.y) - 10, 8, 16);
+
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(Math.round(r.x) - 2, Math.round(r.y) - 6, 4, 10);
     }
 
     // Частицы
     for (const p of this.particles) {
-      const alpha = Math.max(0, p.lifeMs / p.maxLifeMs);
+      const t = Math.max(0, p.lifeMs / p.maxLifeMs);
+      const alpha = Math.pow(t, 1.35);
+      const s = Math.max(1, Math.round(p.size * (0.35 + 0.65 * t)));
       ctx.globalAlpha = alpha;
       ctx.fillStyle = p.color;
-      const s = p.size;
       ctx.fillRect(Math.round(p.x - s / 2), Math.round(p.y - s / 2), s, s);
     }
+
     ctx.globalAlpha = 1;
+    ctx.restore();
   }
 
   _spawnRocket(camera) {
-    const x = camera.x + Math.random() * camera.viewportWidth;
-    const y = camera.y + camera.viewportHeight + 10;
-    const targetH = this.config.minHeight +
-      Math.random() * (this.config.maxHeight - this.config.minHeight);
-    // v0 = sqrt(2 * |g| * h)
-    const vy = -Math.sqrt(2 * Math.abs(this.config.gravity) * targetH);
+    const cfg = this.config;
+    const vw = camera.viewportWidth;
+    const vh = camera.viewportHeight;
+
+    const x = camera.x + 40 + Math.random() * Math.max(1, vw - 80);
+    const spawnY = camera.y + vh + 12;
+
+    const frac = cfg.minHeightFraction +
+      Math.random() * (cfg.maxHeightFraction - cfg.minHeightFraction);
+    const targetY = camera.y + vh * frac;
+
+    const distance = Math.max(40, spawnY - targetY);
+    const v0 = Math.sqrt(2 * cfg.rocketGravity * distance);
+
     this.rockets.push({
       x,
-      y,
-      vx: (Math.random() - 0.5) * 40,
-      vy,
+      y: spawnY,
+      vx: (Math.random() - 0.5) * 60,
+      vy: -v0,
+      targetY,
       color: this._randomColor(),
-      lifeMs: 4000
+      lifeMs: 5000
     });
   }
 
   _explode(rocket) {
-    const count = this.config.particleCount;
+    const cfg = this.config;
+
+    // Центральный flash
+    this.particles.push({
+      x: rocket.x,
+      y: rocket.y,
+      vx: 0,
+      vy: 0,
+      lifeMs: cfg.flashLifeMs,
+      maxLifeMs: cfg.flashLifeMs,
+      color: "#ffffff",
+      size: cfg.flashSize
+    });
+
+    // Радиальный разлёт
+    const count = cfg.particleCount;
     const baseAngle = Math.random() * Math.PI * 2;
+
     for (let i = 0; i < count; i++) {
-      const angle = baseAngle + (i / count) * Math.PI * 2 + Math.random() * 0.25;
-      const speed = this.config.particleSpeed * (0.45 + Math.random() * 0.75);
-      const life = this.config.particleLifeMs * (0.7 + Math.random() * 0.6);
+      const angle = baseAngle + (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.35;
+      const speed = cfg.particleSpeed * (0.35 + Math.random() * 0.95);
+      const life = cfg.particleLifeMs * (0.6 + Math.random() * 0.8);
+      const color = Math.random() < 0.5 ? rocket.color : this._randomColor();
       this.particles.push({
         x: rocket.x,
         y: rocket.y,
@@ -118,8 +162,8 @@ export class FireworksSystem {
         vy: Math.sin(angle) * speed,
         lifeMs: life,
         maxLifeMs: life,
-        color: Math.random() < 0.5 ? rocket.color : this._randomColor(),
-        size: this.config.particleSize
+        color,
+        size: cfg.particleSize * (0.55 + Math.random() * 1.0)
       });
     }
   }
