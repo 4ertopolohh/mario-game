@@ -1,0 +1,117 @@
+#overlay-layer {
+  position: absolute; inset: 0;
+  pointer-events: none;
+}
+#overlay-layer > div {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+#game-over-overlay {
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  pointer-events: auto;
+  gap: 18px;
+  padding: 24px;
+}
+#game-over-overlay h1 { font-size: 22px; letter-spacing: 1px; }
+#game-over-overlay p { font-size: 11px; line-height: 1.8; }
+#restart-btn {
+  font-family: inherit;
+  font-size: 11px;
+  padding: 14px 22px;
+  background: #c0392b;
+  color: #fff;
+  border: 2px solid #fff;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+#restart-btn:active { background: #e74c3c; }
+#audio-unlock-overlay {
+  top: 12px; left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 2px solid #f1c40f;
+  border-radius: 6px;
+  pointer-events: auto;
+  cursor: pointer;
+  max-width: 90vw;
+}
+#audio-unlock-overlay p { font-size: 10px; line-height: 1.5; color: #f1c40f; }
+#loading-overlay {
+  inset: 0;
+  background: #000;
+  pointer-events: auto;
+}
+#loading-overlay p { font-size: 14px; letter-spacing: 2px; }
+
+/* ===== Level Intro ===== */
+#level-intro {
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 40;
+  padding: 0 20px;
+  max-width: 92vw;
+}
+#level-intro-title {
+  font-family: "Press Start 2P", "Courier New", monospace;
+  font-size: 40px;
+  color: #ffffff;
+  letter-spacing: 3px;
+  text-shadow:
+    0 0 12px rgba(255, 255, 255, 0.55),
+    0 0 24px rgba(255, 200, 40, 0.5),
+    4px 4px 0 #000,
+    -2px -2px 0 #000;
+  margin-bottom: 16px;
+}
+#level-intro-subtitle {
+  font-family: "Press Start 2P", "Courier New", monospace;
+  font-size: 14px;
+  color: #ffe066;
+  letter-spacing: 2px;
+  text-shadow:
+    0 0 8px rgba(0, 0, 0, 0.9),
+    3px 3px 0 #000;
+}
+@media (max-width: 480px) {
+  #level-intro-title { font-size: 22px; letter-spacing: 2px; }
+  #level-intro-subtitle { font-size: 10px; letter-spacing: 1px; }
+}
+
+/* ===== Finale greeting ===== */
+#finale-greeting {
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(0.4);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 60;
+  font-family: "Press Start 2P", "Courier New", monospace;
+  font-size: 44px;
+  color: #fff;
+  letter-spacing: 3px;
+  text-shadow:
+    0 0 14px #ff3fd0,
+    0 0 28px #ffcc00,
+    4px 4px 0 #000,
+    -2px -2px 0 #000;
+  padding: 0 12px;
+  max-width: 92vw;
+}
+#finale-greeting:not(.hidden) {
+  animation: finale-greeting-in 1100ms cubic-bezier(.2,.8,.2,1.1) both;
+}
+@keyframes finale-greeting-in {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+  60%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@media (max-width: 480px) {
+  #finale-greeting { font-size: 22px; letter-spacing: 1px; }
+}

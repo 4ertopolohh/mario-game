@@ -1,0 +1,43 @@
+#hud-layer {
+  position: absolute; inset: 0;
+  pointer-events: none;
+}
+#health-hud {
+  position: absolute;
+  top: 12px; right: 12px;
+  display: flex;
+  gap: 6px;
+  z-index: 5;
+}
+.heart-slot {
+  position: relative;
+  width: 36px; height: 36px;
+}
+.heart-slot .heart-img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.heart-slot.no-image::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: #e04040;
+  border-radius: 4px;
+}
+.heart-slot.half .heart-img,
+.heart-slot.half.no-image::before {
+  clip-path: inset(0 50% 0 0);
+}
+.heart-slot.empty .heart-img { opacity: 0.18; }
+.heart-slot.empty.no-image::before { opacity: 0.18; }
+.heart-slot.blink {
+  animation: heart-blink 100ms steps(2, end) 5;
+}
+@keyframes heart-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+@media (max-width: 480px) {
+  .heart-slot { width: 28px; height: 28px; }
+}

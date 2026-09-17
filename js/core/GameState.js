@@ -1,0 +1,8 @@
+export const GameState = Object.freeze({
+  LOADING: "LOADING",
+  PLAYING: "PLAYING",
+  PAUSED: "PAUSED",
+  FINALE: "FINALE",
+  GAME_OVER: "GAME_OVER",
+  GAME_COMPLETED: "GAME_COMPLETED"
+});

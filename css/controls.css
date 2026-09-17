@@ -1,0 +1,37 @@
+#touch-controls {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  display: none;
+}
+.tc-group {
+  position: absolute;
+  bottom: 18px;
+  display: flex;
+  gap: 12px;
+  pointer-events: none;
+}
+.tc-left { left: 18px; }
+.tc-right { right: 18px; }
+.tc-btn {
+  pointer-events: auto;
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: 1px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.tc-btn.active { background: rgba(255, 255, 255, 0.5); }
+.tc-jump { width: 88px; height: 88px; font-size: 11px; }
+@media (pointer: coarse) {
+  #touch-controls { display: block; }
+}
+@media (pointer: coarse) and (max-width: 480px) {
+  .tc-btn { width: 60px; height: 60px; }
+  .tc-jump { width: 76px; height: 76px; }
+}
