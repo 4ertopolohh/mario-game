@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Платформер</title>
+<link rel="stylesheet" href="./css/main.css">
+<link rel="stylesheet" href="./css/game.css">
+<link rel="stylesheet" href="./css/hud.css">
+<link rel="stylesheet" href="./css/controls.css">
+<link rel="stylesheet" href="./css/debug.css">
+</head>
+<body>
+<div id="game-container">
+  <canvas id="game-canvas"></canvas>
+  <div id="hud-layer">
+    <div id="health-hud"></div>
+    <div id="touch-controls">
+      <div class="tc-group tc-left">
+        <button class="tc-btn" data-action="moveLeft" aria-label="Влево" type="button">←</button>
+        <button class="tc-btn" data-action="moveRight" aria-label="Вправо" type="button">→</button>
+      </div>
+      <div class="tc-group tc-right">
+        <button class="tc-btn" data-action="down" aria-label="Вниз" type="button">ВНИЗ</button>
+        <button class="tc-btn tc-jump" data-action="jump" aria-label="Прыжок" type="button">ПРЫЖОК</button>
+      </div>
+    </div>
+  </div>
+  <div id="overlay-layer">
+    <div id="level-intro" class="hidden">
+      <div id="level-intro-title"></div>
+      <div id="level-intro-subtitle"></div>
+    </div>
+    <div id="finale-greeting" class="hidden">С днем рождения!!!</div>
+    <div id="game-over-overlay" class="hidden">
+      <h1>Игра окончена</h1>
+      <p>Нажмите Enter или Пробел, чтобы начать уровень заново</p>
+      <button id="restart-btn" type="button">Повторить уровень</button>
+    </div>
+    <div id="audio-unlock-overlay" class="hidden">
+      <p>Нажмите любую клавишу или коснитесь экрана, чтобы включить звук</p>
+    </div>
+    <div id="loading-overlay"><p>Загрузка…</p></div>
+  </div>
+  <div id="debug-overlay" class="hidden"></div>
+</div>
+<noscript><p style="color:#fff;padding:20px;font-family:monospace">Для работы игры необходим JavaScript.</p></noscript>
+<script type="module" src="./js/main.js"></script>
+</body>
+</html>
