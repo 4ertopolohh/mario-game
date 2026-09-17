@@ -40,8 +40,6 @@ export class LevelManager {
     /**
      * Кэш разрешённых enemy-pool-ов.
      * Структура: { levelId, resolvedEnemies: [...] }.
-     * Переиспользуется при restart того же уровня, чтобы layout врагов
-     * (в т.ч. результаты разрешения пулов типа) не менялся.
      */
     this._enemyLayoutState = null;
   }
@@ -62,8 +60,6 @@ export class LevelManager {
     this.currentLevelId = levelId;
     this.currentLevel = { ...cfg, traps: [] };
 
-    // Friend roll и enemy pool resolution ДО preload — единый выбор для
-    // ассетов и для фактического создания сущностей.
     const friendDecision = this._getOrCreateRandomFriendDecision(levelId, isRestart);
     const friendTypeToPreload = friendDecision.spawn ? friendDecision.type : null;
     const resolvedEnemies = this._resolveEnemyTypes(cfg.enemies || [], levelId, isRestart);
@@ -78,7 +74,7 @@ export class LevelManager {
     this.player = player;
     this.entityManager.add(player);
 
-    // Enemies — из уже разрешённого массива (типы окончательные).
+    // Enemies
     for (const spawn of resolvedEnemies) {
       let e;
       if (spawn.type === "enemy1") e = new EnemyType1(spawn);
@@ -150,7 +146,7 @@ export class LevelManager {
   }
 
   // ---------------------------------------------------------------------------
-  // Random Friend helper (Levels 1–5, 40%, без reroll при restart)
+  // Random Friend helper
   // ---------------------------------------------------------------------------
 
   _getOrCreateRandomFriendDecision(levelId, isRestart) {
@@ -219,13 +215,6 @@ export class LevelManager {
   // Enemy pool resolution
   // ---------------------------------------------------------------------------
 
-  /**
-   * Разрешает декларативные пулы типов врагов в конкретные типы.
-   *  - `spawn.type` может быть строкой ("enemy1") или массивом-пулом
-   *    (["enemy1","enemy2"]), из которого тип выбирается равновероятно.
-   *  - Результат кэшируется по levelId и переиспользуется при restart.
-   *  - При новом нормальном входе на уровень выполняется новый roll.
-   */
   _resolveEnemyTypes(enemies, levelId, isRestart) {
     if (isRestart &&
         this._enemyLayoutState &&
@@ -253,6 +242,22 @@ export class LevelManager {
 
     if (PLAYER_CONFIG.appearance) {
       paths.push(PLAYER_CONFIG.appearance.headTexture, PLAYER_CONFIG.appearance.bodyTexture);
+      if (PLAYER_CONFIG.appearance.finalBodyTexture) {
+        paths.push(PLAYER_CONFIG.appearance.finalBodyTexture);
+      }
+    }
+
+    // Level-specific visuals (background / ground / platform)
+    if (cfg.visuals) {
+      if (cfg.visuals.background && cfg.visuals.background.texture) {
+        paths.push(cfg.visuals.background.texture);
+      }
+      if (cfg.visuals.ground && cfg.visuals.ground.texture) {
+        paths.push(cfg.visuals.ground.texture);
+      }
+      if (cfg.visuals.platform && cfg.visuals.platform.texture) {
+        paths.push(cfg.visuals.platform.texture);
+      }
     }
 
     const enemies = resolvedEnemies || cfg.enemies || [];
@@ -265,6 +270,18 @@ export class LevelManager {
       const fc = FRIEND_CONFIG_BY_TYPE[randomFriendType];
       if (fc && fc.appearance) {
         paths.push(fc.appearance.headTexture, fc.appearance.bodyTexture);
+      }
+    }
+
+    // Boss level: FinaleController создаст ВСЕ 12 типов Friend'ов.
+    // Гарантируем, что все их текстуры попали в кэш ResourceManager
+    // до того, как игрок победит Boss — без "pop-in" в финале.
+    if (cfg.boss) {
+      for (const typeKey of FRIEND_TYPES_ORDERED) {
+        const fc = FRIEND_CONFIG_BY_TYPE[typeKey];
+        if (fc && fc.appearance) {
+          paths.push(fc.appearance.headTexture, fc.appearance.bodyTexture);
+        }
       }
     }
 
@@ -337,6 +354,12 @@ export class LevelManager {
           if (typesUsed.has("enemy2")) paths.push(ENEMY_TYPE_2_CONFIG.appearance.headTexture, ENEMY_TYPE_2_CONFIG.appearance.bodyTexture);
           if (typesUsed.has("enemy3")) paths.push(ENEMY_TYPE_3_CONFIG.appearance.headTexture, ENEMY_TYPE_3_CONFIG.appearance.bodyTexture);
           if (lvl.boss) paths.push(BOSS_CONFIG.appearance.headTexture, BOSS_CONFIG.appearance.bodyTexture);
+          // Level visuals
+          if (lvl.visuals) {
+            if (lvl.visuals.background && lvl.visuals.background.texture) paths.push(lvl.visuals.background.texture);
+            if (lvl.visuals.ground && lvl.visuals.ground.texture) paths.push(lvl.visuals.ground.texture);
+            if (lvl.visuals.platform && lvl.visuals.platform.texture) paths.push(lvl.visuals.platform.texture);
+          }
           await this.resourceManager.loadImages(paths);
         }
       } catch (e) { /* ignore */ }

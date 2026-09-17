@@ -49,6 +49,11 @@ export class FinaleController {
     this.fireworks.stop();
   }
 
+  /** @returns {boolean} true, когда fireworks фактически активны. */
+  isFireworksActive() {
+    return this.active && this.fireworks.active;
+  }
+
   update(dt) {
     if (!this.active) return;
     const game = this.game;

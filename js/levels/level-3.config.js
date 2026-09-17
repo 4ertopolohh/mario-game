@@ -1,6 +1,11 @@
 export const LEVEL_3 = {
   id: 3,
-  music: "./assets/audio/music/level-3.mp3",
+  music: "./assets/audio/level-3/Kai Angel, 9mice-LIPSTICK.mp3",
+  visuals: {
+    background: { texture: "./assets/images/ui/balasiha.jpeg" },
+    ground: { texture: "./assets/images/ui/asphalt.png" },
+    platform: { texture: "./assets/images/ui/asphalt.png" }
+  },
   world: { width: 4400, height: 720 },
   playerSpawn: { x: 120, y: 500 },
   platforms: [

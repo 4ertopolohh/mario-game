@@ -10,7 +10,7 @@ export const ENEMY_TYPE_1_CONFIG = {
   type: "enemy-1",
   nickname: "Максимка",
   appearance: {
-    headTexture: "./assets/images/enemies/type-1/head.webp",
+    headTexture: "./assets/images/enemies/type-1/head.png",
     bodyTexture: "./assets/images/enemies/type-1/body.png"
   },
   audio: {
@@ -23,7 +23,7 @@ export const ENEMY_TYPE_2_CONFIG = {
   type: "enemy-2",
   nickname: "Богданчик",
   appearance: {
-    headTexture: "./assets/images/enemies/type-2/head.webp",
+    headTexture: "./assets/images/enemies/type-2/head.png",
     bodyTexture: "./assets/images/enemies/type-2/body.png"
   },
   audio: {
@@ -36,7 +36,7 @@ export const ENEMY_TYPE_3_CONFIG = {
   type: "enemy-3",
   nickname: "Деревянко",
   appearance: {
-    headTexture: "./assets/images/enemies/type-3/head.webp",
+    headTexture: "./assets/images/enemies/type-3/head.png",
     bodyTexture: "./assets/images/enemies/type-3/body.png"
   },
   audio: {

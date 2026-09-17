@@ -1,6 +1,11 @@
 export const LEVEL_4 = {
   id: 4,
-  music: "./assets/audio/music/level-4.mp3",
+  music: "./assets/audio/level-4/Light Club - Blizzard.mp3",
+  visuals: {
+    background: { texture: "./assets/images/levels/level-4/background.png" },
+    ground: { texture: "./assets/images/levels/level-4/ground.png" },
+    platform: { texture: "./assets/images/levels/level-4/platform.png" }
+  },
   world: { width: 5000, height: 720 },
   playerSpawn: { x: 120, y: 500 },
   platforms: [

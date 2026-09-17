@@ -231,7 +231,12 @@ export class Game {
       if (typeof trap.disable === "function") trap.disable();
     }
 
-    // 3. Boss уже dead (Boss.takeDamage проставил alive=false до эмита события).
+    // 3. Смена текстуры тела Player на финальную (голова остаётся обычной).
+    if (this.player && this.player.appearance && this.player.appearance.finalBodyTexture) {
+      this.player.appearance.bodyTexture = this.player.appearance.finalBodyTexture;
+    }
+
+    // 4. Boss уже dead (Boss.takeDamage проставил alive=false до эмита события).
 
     this.setState(GameState.FINALE);
     this.finaleController.start();
@@ -241,7 +246,7 @@ export class Game {
     for (const e of this.entityManager.entities) {
       if (!e.alive) continue;
       if (e.type === "player") continue;
-      if (e.isFriend) continue; // Friend играет spawn-звук самостоятельно
+      if (e.isFriend) continue;
       if (!e.firstVisibleScheduled) e.firstVisibleScheduled = false;
       if (e.visibilityScheduled) continue;
       if (!this.camera.isCenterVisible(e)) continue;
@@ -284,9 +289,16 @@ export class Game {
     const level = this.levelManager.currentLevel;
     if (level) {
       this.renderer.drawBackground(level);
+
+      // Затемнение фона — только когда фактически активны салюты.
+      if (this.state === GameState.FINALE && this.finaleController.isFireworksActive()) {
+        this.renderer.drawBackgroundDim();
+      }
+
       if (this.state === GameState.FINALE) {
         this.finaleController.renderFireworks(this.renderer.ctx);
       }
+
       this.renderer.drawPlatforms(level);
       this.renderer.drawObstacles(level);
       this.renderer.drawHazards(level);

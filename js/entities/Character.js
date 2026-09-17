@@ -42,9 +42,15 @@ export class Character extends Entity {
     ctx.strokeRect(rect.x + 1, rect.y + 1, rect.width - 2, rect.height - 2);
   }
 
+  /**
+   * Голова визуально перекрывает верх тела на `headBodyOverlap` от bodyH.
+   * Внешние границы (this.y .. this.y + this.height) и hitbox НЕ меняются.
+   * Body рисуется первым, head — поверх, чтобы overlap отображался как голова сверху.
+   */
   render(ctx) {
     const headH = (this.appearance.head && this.appearance.head.height) || Math.round(this.height * 0.4);
     const bodyH = this.height - headH;
+    const overlap = Math.round(bodyH * GAME_CONFIG.visuals.headBodyOverlap);
 
     const flip = this.facing < 0;
     if (flip) {
@@ -55,8 +61,20 @@ export class Character extends Entity {
       ctx.translate(-cx, 0);
     }
 
-    this._drawTexture(ctx, "head", { x: this.x, y: this.y, width: this.width, height: headH });
-    this._drawTexture(ctx, "body", { x: this.x, y: this.y + headH, width: this.width, height: bodyH });
+    // Body слегка выше — перекрывается головой сверху.
+    this._drawTexture(ctx, "body", {
+      x: this.x,
+      y: this.y + headH - overlap,
+      width: this.width,
+      height: bodyH + overlap
+    });
+    // Head поверх — накрывает верхнюю часть body.
+    this._drawTexture(ctx, "head", {
+      x: this.x,
+      y: this.y,
+      width: this.width,
+      height: headH
+    });
 
     if (flip) ctx.restore();
   }

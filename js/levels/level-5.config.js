@@ -1,6 +1,11 @@
 export const LEVEL_5 = {
   id: 5,
-  music: "./assets/audio/music/level-5.mp3",
+  music: "./assets/audio/level-5/Pharaon - Дико Например Gay Remix.mp3",
+  visuals: {
+    background: { texture: "./assets/images/levels/level-5/background.png" },
+    ground: { texture: "./assets/images/levels/level-5/ground.png" },
+    platform: { texture: "./assets/images/levels/level-5/platform.png" }
+  },
   world: { width: 2400, height: 720 },
   playerSpawn: { x: 120, y: 500 },
   platforms: [
@@ -29,13 +34,9 @@ export const LEVEL_5 = {
     { id: "e5-4", type: "enemy1", spawn: { x: 2000, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2000, y: 544 }, { x: 2250, y: 544 }] } }
   ],
   // НЕТ массива friends — Friends здесь появляются только через FinaleController
-  // после BOSS_DEFEATED.
+  // после BOSS_DEFEATED, либо как random helper (40%) при загрузке уровня.
   boss: { x: 2100, y: 448 },
   bossTraps: [
-    // Boss статичен на x 2100..2228, y 448..640.
-    // damageZone каждой ловушки реально пересекает AABB Boss-а.
-    // Значение damage НЕ указано — LevelManager берёт его из BOSS_CONFIG
-    // (health.max / requiredTrapHits = 10 / 5 = 2).
     {
       id: "boss-trap-01",
       trigger: { x: 300, y: 560, width: 80, height: 80 },

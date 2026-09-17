@@ -1,6 +1,11 @@
 export const LEVEL_1 = {
   id: 1,
-  music: "./assets/audio/level-1/Light Club - Blizzard.mp3",
+  music: "./assets/audio/level-1/opening 1 - Death Note.mp3",
+  visuals: {
+    background: { texture: "./assets/images/ui/balasiha.jpeg" },
+    ground: { texture: "./assets/images/levels/level-1/ground.png" },
+    platform: { texture: "./assets/images/levels/level-1/platform.png" }
+  },
   world: { width: 3200, height: 720 },
   playerSpawn: { x: 120, y: 500 },
   platforms: [

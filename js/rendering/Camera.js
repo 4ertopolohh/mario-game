@@ -1,3 +1,5 @@
+import { GAME_CONFIG } from "../config/game.config.js";
+
 export class Camera {
   constructor() {
     this.x = 0;
@@ -6,6 +8,7 @@ export class Camera {
     this.viewportHeight = 720;
     this.worldWidth = 3200;
     this.worldHeight = 720;
+    this.verticalAnchor = GAME_CONFIG.camera.verticalAnchor;
   }
 
   setViewport(w, h) { this.viewportWidth = w; this.viewportHeight = h; }
@@ -15,7 +18,7 @@ export class Camera {
     const tcx = target.x + target.width / 2;
     const tcy = target.y + target.height / 2;
     let cx = tcx - this.viewportWidth / 2;
-    let cy = tcy - this.viewportHeight / 2;
+    let cy = tcy - this.viewportHeight * this.verticalAnchor;
     const maxX = Math.max(0, this.worldWidth - this.viewportWidth);
     const maxY = Math.max(0, this.worldHeight - this.viewportHeight);
     if (cx < 0) cx = 0; else if (cx > maxX) cx = maxX;
