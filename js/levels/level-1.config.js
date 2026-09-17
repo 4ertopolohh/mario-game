@@ -1,6 +1,6 @@
 export const LEVEL_1 = {
   id: 1,
-  music: "./assets/audio/music/level-1.mp3",
+  music: "./assets/audio/level-1/Light Club - Blizzard.mp3",
   world: { width: 3200, height: 720 },
   playerSpawn: { x: 120, y: 500 },
   platforms: [
@@ -18,9 +18,9 @@ export const LEVEL_1 = {
     { id: "o3", x: 2400, y: 560, width: 40, height: 80 }
   ],
   hazards: [
-    { id: "h1", x: 1000, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/hazards/spikes.webp" },
-    { id: "h2", x: 1850, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/hazards/spikes.webp" },
-    { id: "h3", x: 2700, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/hazards/spikes.webp" }
+    { id: "h1", x: 1000, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h2", x: 1850, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h3", x: 2700, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" }
   ],
   enemies: [
     { id: "e1-1", type: "enemy1", spawn: { x: 900, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 900, y: 544 }, { x: 1250, y: 544 }] } },

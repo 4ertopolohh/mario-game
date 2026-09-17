@@ -22,10 +22,10 @@ export const LEVEL_2 = {
     { id: "o5", x: 3300, y: 560, width: 40, height: 80 }
   ],
   hazards: [
-    { id: "h1", x: 900, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/hazards/spikes.webp" },
-    { id: "h2", x: 1600, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/hazards/spikes.webp" },
-    { id: "h3", x: 2350, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/hazards/spikes.webp" },
-    { id: "h4", x: 3050, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/hazards/spikes.webp" }
+    { id: "h1", x: 900, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h2", x: 1600, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h3", x: 2350, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h4", x: 3050, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" }
   ],
   enemies: [
     { id: "e2-1", type: "enemy1", spawn: { x: 800, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 800, y: 544 }, { x: 1150, y: 544 }] } },

@@ -3,7 +3,7 @@ export const FINALE_CONFIG = Object.freeze({
   friendMoveSpeed: 420,
   friendSpacing: 90,
   minFriendSpacing: 32,
-  greeting: "С днем рождения!!!",
+  greeting: "С днем рождения Мария!!!",
 
   /**
    * Праздничные прыжки во время фазы celebrating.

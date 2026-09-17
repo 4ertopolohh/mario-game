@@ -1,9 +1,9 @@
 export const PLAYER_CONFIG = {
   id: "player",
-  nickname: "Игрок",
+  nickname: "Мария",
   appearance: {
     headTexture: "./assets/images/player/head.webp",
-    bodyTexture: "./assets/images/player/body.webp"
+    bodyTexture: "./assets/images/player/body.png"
   },
   audio: {
     damage: "./assets/audio/player/damage.mp3",

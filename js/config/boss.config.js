@@ -1,6 +1,6 @@
 export const BOSS_CONFIG = {
   id: "boss",
-  nickname: "Босс",
+  nickname: "Раиса",
   size: { width: 128, height: 192 },
   appearance: {
     headTexture: "./assets/images/boss/head.webp",
