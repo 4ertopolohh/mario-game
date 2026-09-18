@@ -42,6 +42,23 @@ The content is organized as follows:
 <directory_structure>
 assets/
   audio/
+    enemies/
+      type-1/
+        damage.mp3
+        extra.mp3
+      type-2/
+        damage.mp3
+        extra.mp3
+      type-3/
+        damage.mp3
+        extra.mp3
+    friends/
+      friend-11/
+        extra.mp3
+      friend-12/
+        extra.mp3
+      friend-9/
+        extra.mp3
     level-1/
       opening 1 - Death Note.mp3
     level-2/
@@ -110,6 +127,12 @@ assets/
       asphalt.webp
       balasiha.jpeg
       heart.png
+      level1.png
+      level2.png
+      level3.png
+      level4.png
+      level5.png
+      sperm.png
       spikes.png
 css/
   controls.css
@@ -127,6 +150,7 @@ js/
     game.config.js
     level-titles.config.js
     player.config.js
+    surface-themes.config.js
     traps.config.js
   core/
     EventBus.js
@@ -169,6 +193,7 @@ js/
     Camera.js
     FireworksSystem.js
     Renderer.js
+    SurfaceTextureFactory.js
   utils/
     aabb.js
     Logger.js
@@ -238,126 +263,6 @@ This section contains the contents of the repository's files.
   pointer-events: none;
   z-index: 100;
   max-width: 60vw;
-}
-</file>
-
-<file path="css/game.css">
-#overlay-layer {
-  position: absolute; inset: 0;
-  pointer-events: none;
-}
-#overlay-layer > div {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-#game-over-overlay {
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  pointer-events: auto;
-  gap: 18px;
-  padding: 24px;
-}
-#game-over-overlay h1 { font-size: 22px; letter-spacing: 1px; }
-#game-over-overlay p { font-size: 11px; line-height: 1.8; }
-#restart-btn {
-  font-family: inherit;
-  font-size: 11px;
-  padding: 14px 22px;
-  background: #c0392b;
-  color: #fff;
-  border: 2px solid #fff;
-  cursor: pointer;
-  letter-spacing: 1px;
-}
-#restart-btn:active { background: #e74c3c; }
-#audio-unlock-overlay {
-  top: 12px; left: 50%;
-  transform: translateX(-50%);
-  padding: 10px 16px;
-  background: rgba(0, 0, 0, 0.85);
-  border: 2px solid #f1c40f;
-  border-radius: 6px;
-  pointer-events: auto;
-  cursor: pointer;
-  max-width: 90vw;
-}
-#audio-unlock-overlay p { font-size: 10px; line-height: 1.5; color: #f1c40f; }
-#loading-overlay {
-  inset: 0;
-  background: #000;
-  pointer-events: auto;
-}
-#loading-overlay p { font-size: 14px; letter-spacing: 2px; }
-
-/* ===== Level Intro ===== */
-#level-intro {
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  opacity: 0;
-  pointer-events: none;
-  z-index: 40;
-  padding: 0 20px;
-  max-width: 92vw;
-}
-#level-intro-title {
-  font-family: "Press Start 2P", "Courier New", monospace;
-  font-size: 40px;
-  color: #ffffff;
-  letter-spacing: 3px;
-  text-shadow:
-    0 0 12px rgba(255, 255, 255, 0.55),
-    0 0 24px rgba(255, 200, 40, 0.5),
-    4px 4px 0 #000,
-    -2px -2px 0 #000;
-  margin-bottom: 16px;
-}
-#level-intro-subtitle {
-  font-family: "Press Start 2P", "Courier New", monospace;
-  font-size: 14px;
-  color: #ffe066;
-  letter-spacing: 2px;
-  text-shadow:
-    0 0 8px rgba(0, 0, 0, 0.9),
-    3px 3px 0 #000;
-}
-@media (max-width: 480px) {
-  #level-intro-title { font-size: 22px; letter-spacing: 2px; }
-  #level-intro-subtitle { font-size: 10px; letter-spacing: 1px; }
-}
-
-/* ===== Finale greeting ===== */
-#finale-greeting {
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%) scale(0.4);
-  opacity: 0;
-  pointer-events: none;
-  z-index: 60;
-  font-family: "Press Start 2P", "Courier New", monospace;
-  font-size: 44px;
-  color: #fff;
-  letter-spacing: 3px;
-  text-shadow:
-    0 0 14px #ff3fd0,
-    0 0 28px #ffcc00,
-    4px 4px 0 #000,
-    -2px -2px 0 #000;
-  padding: 0 12px;
-  max-width: 92vw;
-}
-#finale-greeting:not(.hidden) {
-  animation: finale-greeting-in 1100ms cubic-bezier(.2,.8,.2,1.1) both;
-}
-@keyframes finale-greeting-in {
-  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
-  60%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
-  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-}
-@media (max-width: 480px) {
-  #finale-greeting { font-size: 22px; letter-spacing: 1px; }
 }
 </file>
 
@@ -453,6 +358,94 @@ export const LEVEL_INTRO_CONFIG = Object.freeze({
   holdMs: 1600,
   fadeOutMs: 500
 });
+</file>
+
+<file path="js/config/surface-themes.config.js">
+/**
+ * Конфигурация процедурных pixel-art тем для ground / one-way платформ.
+ * Каждая тема описывает: размер тайла, тип рисунка, палитру и параметры
+ * border'ов. Renderer читает theme по semantic id из level.surfaceTheme
+ * и не содержит ветвлений if(level.id === N).
+ */
+
+export const SURFACE_THEMES = Object.freeze({
+  // Level 1 — стерильная больничная плитка.
+  hospital: {
+    tileSize: 16,
+    pattern: "tile",
+    palette: {
+      base: "#e8eef2",
+      baseAlt: "#dde5ea",
+      seam: "#b6c2ca",
+      highlight: "#f6f9fb",
+      detail: "#a4b0b8"
+    },
+    groundBorder: { top: 3, topColor: "#ffffff", topShadow: "#c2ccd4" },
+    platformBorder: { thickness: 2, top: "#ffffff", side: "#c8d2da", bottom: "#889298" }
+  },
+
+  // Level 2 — тёплый школьный паркет/линолеум.
+  school: {
+    tileSize: 16,
+    pattern: "plank",
+    palette: {
+      base: "#c49a68",
+      baseAlt: "#b78e5c",
+      seam: "#7a5836",
+      highlight: "#d6ac78",
+      detail: "#8e6a44"
+    },
+    groundBorder: { top: 3, topColor: "#e0ba88", topShadow: "#7a5836" },
+    platformBorder: { thickness: 2, top: "#e0ba88", side: "#a07848", bottom: "#5a3e20" }
+  },
+
+  // Level 3 — городской бетон/асфальт.
+  city: {
+    tileSize: 16,
+    pattern: "concrete",
+    palette: {
+      base: "#6e6e72",
+      baseAlt: "#606064",
+      seam: "#3c3c40",
+      highlight: "#8a8a8e",
+      detail: "#4a4a4e"
+    },
+    groundBorder: { top: 3, topColor: "#9a9a9e", topShadow: "#3c3c40" },
+    platformBorder: { thickness: 2, top: "#9a9a9e", side: "#5a5a5e", bottom: "#2a2a2e" }
+  },
+
+  // Level 4 — старое общажное дерево, тёмное и потёртое.
+  oldDorm: {
+    tileSize: 16,
+    pattern: "wornWood",
+    palette: {
+      base: "#8a6a48",
+      baseAlt: "#7a5a3a",
+      seam: "#4a3218",
+      highlight: "#a68258",
+      detail: "#5a4028"
+    },
+    groundBorder: { top: 3, topColor: "#a68258", topShadow: "#4a3218" },
+    platformBorder: { thickness: 2, top: "#a68258", side: "#7a5a3a", bottom: "#3a2610" }
+  },
+
+  // Level 5 — уютный домашний паркет/ламинат.
+  apartment: {
+    tileSize: 16,
+    pattern: "parquet",
+    palette: {
+      base: "#c99e6a",
+      baseAlt: "#bd9159",
+      seam: "#8a6a40",
+      highlight: "#ddb884",
+      detail: "#a07848"
+    },
+    groundBorder: { top: 3, topColor: "#e0c08c", topShadow: "#8a6a40" },
+    platformBorder: { thickness: 2, top: "#e0c08c", side: "#b08858", bottom: "#6a4a28" }
+  }
+});
+
+export const DEFAULT_SURFACE_THEME = "hospital";
 </file>
 
 <file path="js/core/EventBus.js">
@@ -1032,124 +1025,6 @@ import { LEVEL_5 } from "./level-5.config.js";
 export const LEVELS = [LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5];
 </file>
 
-<file path="js/managers/AudioManager.js">
-import { Logger } from "../utils/Logger.js";
-
-export class AudioManager {
-  constructor(resourceManager) {
-    this.rm = resourceManager;
-    this.unlocked = false;
-    this.enabled = true;
-    this._currentMusic = null;
-    this._currentMusicPath = null;
-    this._currentMusicScope = null;
-    this._musicNodes = new Set();
-  }
-
-  markUnlocked() {
-    this.unlocked = true;
-    // Если музыка была запрошена, но браузер заблокировал play() — попробуем снова.
-    if (this._currentMusicPath && !this._currentMusic) {
-      this._startMusicNode(this._currentMusicPath);
-    }
-  }
-
-  // ============ ONE-SHOT SOUNDS ============
-  play(path) {
-    if (!path || !this.enabled) return;
-    const base = this.rm.getAudio(path);
-    if (!base) return;
-    try {
-      const node = base.cloneNode();
-      node.volume = 1.0;
-      const p = node.play();
-      if (p && typeof p.catch === "function") p.catch(() => {});
-    } catch (e) {
-      Logger.warn("Audio play failed:", e);
-    }
-  }
-
-  // ============ MUSIC ============
-  /**
-   * Idempotent: если эта же музыка уже играет для того же уровня — не перезапускает.
-   * При запросе другой — останавливает предыдущую.
-   */
-  ensureMusic(path, scope = null) {
-    if (!path) return;
-    if (this._currentMusicPath === path) return;
-    this.playMusic(path, scope);
-  }
-
-  playMusic(path, scope = null) {
-    if (!path || !this.enabled) return;
-
-    // Уже играет эта же — no-op
-    if (this._currentMusicPath === path && this._currentMusic && !this._currentMusic.paused) {
-      return;
-    }
-    // Уже в процессе загрузки/подготовки этой же — повторим попытку
-    if (this._currentMusicPath === path && !this._currentMusic) {
-      this._attemptStartMusic(path);
-      return;
-    }
-
-    this.stopMusic();
-    this._currentMusicPath = path;
-    this._currentMusicScope = scope;
-    this._attemptStartMusic(path);
-  }
-
-  _attemptStartMusic(path) {
-    const base = this.rm.getAudio(path);
-    if (!base) {
-      // Загружаем в фоне и потом стартуем
-      this.rm.loadAudio(path).then((audio) => {
-        if (!audio) return;
-        if (this._currentMusicPath !== path) return;
-        this._startMusicNode(path);
-      }).catch(() => {});
-      return;
-    }
-    this._startMusicNode(path);
-  }
-
-  _startMusicNode(path) {
-    if (this._currentMusicPath !== path) return;
-    if (this._currentMusic) return;
-    const base = this.rm.getAudio(path);
-    if (!base) return;
-    try {
-      const node = base.cloneNode();
-      node.loop = true;
-      node.volume = 0.6;
-      this._currentMusic = node;
-      this._musicNodes.add(node);
-      const p = node.play();
-      if (p && typeof p.catch === "function") p.catch(() => {});
-      node.addEventListener("ended", () => {
-        this._musicNodes.delete(node);
-        if (this._currentMusic === node) this._currentMusic = null;
-      }, { once: true });
-    } catch (e) {
-      Logger.warn("Music play failed:", e);
-    }
-  }
-
-  stopMusic() {
-    if (this._currentMusic) {
-      try { this._currentMusic.pause(); } catch { /* ignore */ }
-      try { this._currentMusic.currentTime = 0; } catch { /* ignore */ }
-      this._musicNodes.delete(this._currentMusic);
-      this._currentMusic = null;
-    }
-    this._currentMusicPath = null;
-    this._currentMusicScope = null;
-  }
-
-  getCurrentMusicPath() { return this._currentMusicPath; }
-}
-</file>
-
 <file path="js/managers/DebugManager.js">
 import { GAME_CONFIG } from "../config/game.config.js";
 
@@ -1621,6 +1496,276 @@ export class StorageManager {
 }
 </file>
 
+<file path="js/rendering/SurfaceTextureFactory.js">
+import { SURFACE_THEMES, DEFAULT_SURFACE_THEME } from "../config/surface-themes.config.js";
+
+/**
+ * Детерминированный PRNG (LCG) на основе seed'а.
+ * Используется в генераторе тайлов, чтобы текстура не мерцала между кадрами.
+ */
+function createSeededRng(seed) {
+  let state = seed >>> 0;
+  if (state === 0) state = 1;
+  return function () {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+}
+
+function hashString(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+/**
+ * Генератор и кэш процедурных pixel-art поверхностей.
+ * Тайлы генерируются один раз на тему и переиспользуются через CanvasPattern.
+ * Pattern в мировых координатах — не мерцает при движении камеры
+ * (anchored в world origin, а не в viewport).
+ */
+export class SurfaceTextureFactory {
+  constructor() {
+    this._tiles = new Map();
+    // ctx -> Map(themeId -> CanvasPattern). WeakMap — ctx живёт с canvas.
+    this._patterns = new WeakMap();
+  }
+
+  /**
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {string} themeId — semantic id темы ("hospital", "school", ...)
+   * @param {{x:number,y:number,width:number,height:number}} rect
+   * @param {"ground"|"platform"} kind
+   */
+  drawSurface(ctx, themeId, rect, kind) {
+    const theme = SURFACE_THEMES[themeId] || SURFACE_THEMES[DEFAULT_SURFACE_THEME];
+    if (!theme) return;
+
+    const x = Math.round(rect.x);
+    const y = Math.round(rect.y);
+    const w = Math.round(rect.width);
+    const h = Math.round(rect.height);
+    if (w <= 0 || h <= 0) return;
+
+    const pattern = this._getPattern(ctx, theme, themeId);
+
+    // imageSmoothingEnabled=false только на время заливки pattern,
+    // чтобы избежать размытия при scaling'е во время camera zoom.
+    const prevSmoothing = ctx.imageSmoothingEnabled;
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = pattern;
+    ctx.fillRect(x, y, w, h);
+    ctx.imageSmoothingEnabled = prevSmoothing;
+
+    this._drawBorder(ctx, theme, x, y, w, h, kind);
+  }
+
+  _getPattern(ctx, theme, themeId) {
+    let map = this._patterns.get(ctx);
+    if (!map) {
+      map = new Map();
+      this._patterns.set(ctx, map);
+    }
+    let pattern = map.get(themeId);
+    if (pattern) return pattern;
+    const tile = this._getTile(theme, themeId);
+    pattern = ctx.createPattern(tile, "repeat");
+    map.set(themeId, pattern);
+    return pattern;
+  }
+
+  _getTile(theme, themeId) {
+    let tile = this._tiles.get(themeId);
+    if (tile) return tile;
+    tile = this._generateTile(theme, themeId);
+    this._tiles.set(themeId, tile);
+    return tile;
+  }
+
+  _generateTile(theme, themeId) {
+    const size = theme.tileSize || 16;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+
+    const rng = createSeededRng(hashString(themeId));
+    const p = theme.palette;
+
+    ctx.fillStyle = p.base;
+    ctx.fillRect(0, 0, size, size);
+
+    switch (theme.pattern) {
+      case "tile":     this._genTile(ctx, size, p, rng);     break;
+      case "plank":    this._genPlank(ctx, size, p, rng);    break;
+      case "concrete": this._genConcrete(ctx, size, p, rng); break;
+      case "wornWood": this._genWornWood(ctx, size, p, rng); break;
+      case "parquet":  this._genParquet(ctx, size, p, rng);  break;
+      default:         this._genConcrete(ctx, size, p, rng); break;
+    }
+
+    return canvas;
+  }
+
+  // --- Паттерн: больничная плитка (4x4 клетки на 16px тайл) ---
+  _genTile(ctx, size, p, rng) {
+    const cell = 4;
+    for (let y = 0; y < size; y += cell) {
+      for (let x = 0; x < size; x += cell) {
+        if (rng() < 0.28) {
+          ctx.fillStyle = p.baseAlt;
+          ctx.fillRect(x, y, cell, cell);
+        }
+      }
+    }
+    ctx.fillStyle = p.seam;
+    for (let y = cell; y < size; y += cell) {
+      ctx.fillRect(0, y, size, 1);
+    }
+    for (let x = cell; x < size; x += cell) {
+      ctx.fillRect(x, 0, 1, size);
+    }
+    ctx.fillStyle = p.highlight;
+    for (let i = 0; i < 5; i++) {
+      const x = Math.floor(rng() * size);
+      const y = Math.floor(rng() * size);
+      ctx.fillRect(x, y, 1, 1);
+    }
+  }
+
+  // --- Паттерн: горизонтальные доски/линолеум ---
+  _genPlank(ctx, size, p, rng) {
+    const plankH = 4;
+    for (let y = 0; y < size; y += plankH) {
+      const alt = ((y / plankH) % 2) === 0;
+      ctx.fillStyle = alt ? p.base : p.baseAlt;
+      ctx.fillRect(0, y, size, plankH);
+      ctx.fillStyle = p.seam;
+      ctx.fillRect(0, y, size, 1);
+      ctx.fillStyle = p.highlight;
+      ctx.fillRect(0, y + 1, size, 1);
+      if (rng() < 0.5) {
+        const kx = Math.floor(rng() * (size - 3));
+        ctx.fillStyle = p.detail;
+        ctx.fillRect(kx, y + 2, 2, 1);
+      }
+    }
+  }
+
+  // --- Паттерн: бетон / асфальт (pixel-noise + редкие агрегаты) ---
+  _genConcrete(ctx, size, p, rng) {
+    for (let i = 0; i < 34; i++) {
+      const x = Math.floor(rng() * size);
+      const y = Math.floor(rng() * size);
+      ctx.fillStyle = rng() < 0.5 ? p.baseAlt : p.detail;
+      ctx.fillRect(x, y, 1, 1);
+    }
+    for (let i = 0; i < 6; i++) {
+      const x = Math.floor(rng() * (size - 2));
+      const y = Math.floor(rng() * (size - 2));
+      ctx.fillStyle = p.detail;
+      ctx.fillRect(x, y, 2, 1);
+    }
+    ctx.fillStyle = p.highlight;
+    for (let i = 0; i < 4; i++) {
+      const x = Math.floor(rng() * size);
+      const y = Math.floor(rng() * size);
+      ctx.fillRect(x, y, 1, 1);
+    }
+  }
+
+  // --- Паттерн: старое общажное дерево с потёртостями ---
+  _genWornWood(ctx, size, p, rng) {
+    const plankH = 5;
+    for (let y = 0; y < size; y += plankH) {
+      const alt = ((y / plankH) % 2) === 0;
+      ctx.fillStyle = alt ? p.base : p.baseAlt;
+      ctx.fillRect(0, y, size, plankH);
+      ctx.fillStyle = p.seam;
+      ctx.fillRect(0, y, size, 1);
+      const marks = Math.floor(rng() * 3);
+      for (let m = 0; m < marks; m++) {
+        const mx = Math.floor(rng() * (size - 3));
+        const my = y + 1 + Math.floor(rng() * Math.max(1, plankH - 2));
+        ctx.fillStyle = rng() < 0.5 ? p.detail : p.highlight;
+        ctx.fillRect(mx, my, 2, 1);
+      }
+    }
+    ctx.fillStyle = p.detail;
+    for (let i = 0; i < 5; i++) {
+      const x = Math.floor(rng() * size);
+      const y = Math.floor(rng() * size);
+      ctx.fillRect(x, y, 1, 1);
+    }
+  }
+
+  // --- Паттерн: домашний паркет (шахматные блоки с seam'ами) ---
+  _genParquet(ctx, size, p, rng) {
+    const block = 4;
+    for (let y = 0; y < size; y += block) {
+      for (let x = 0; x < size; x += block) {
+        const alt = (((x / block) + (y / block)) % 2) === 0;
+        ctx.fillStyle = alt ? p.base : p.baseAlt;
+        ctx.fillRect(x, y, block, block);
+        ctx.fillStyle = p.seam;
+        ctx.fillRect(x, y, block, 1);
+        ctx.fillRect(x, y, 1, block);
+      }
+    }
+    ctx.fillStyle = p.highlight;
+    for (let i = 0; i < 6; i++) {
+      const x = Math.floor(rng() * size);
+      const y = Math.floor(rng() * size);
+      ctx.fillRect(x, y, 1, 1);
+    }
+  }
+
+  /**
+   * Границы не повторяются как pattern — рисуются поверх заливки.
+   * Ground: только верхняя сторона.
+   * Platform: все четыре стороны, различающиеся по светлоте.
+   */
+  _drawBorder(ctx, theme, x, y, w, h, kind) {
+    const border = kind === "ground" ? theme.groundBorder : theme.platformBorder;
+    if (!border) return;
+
+    if (kind === "ground") {
+      const t = Math.max(1, border.top | 0);
+      if (border.topShadow) {
+        ctx.fillStyle = border.topShadow;
+        ctx.fillRect(x, y + t, w, 1);
+      }
+      ctx.fillStyle = border.topColor;
+      ctx.fillRect(x, y, w, t);
+    } else {
+      const t = Math.max(1, border.thickness | 0);
+      const innerH = h - 2 * t;
+      // Верх — самый светлый.
+      ctx.fillStyle = border.top;
+      ctx.fillRect(x, y, w, t);
+      // Бока.
+      ctx.fillStyle = border.side;
+      if (innerH > 0) {
+        ctx.fillRect(x, y + t, t, innerH);
+        ctx.fillRect(x + w - t, y + t, t, innerH);
+      }
+      // Низ — самый тёмный.
+      ctx.fillStyle = border.bottom;
+      ctx.fillRect(x, y + h - t, w, t);
+    }
+  }
+
+  clear() {
+    this._tiles.clear();
+    this._patterns = new WeakMap();
+  }
+}
+</file>
+
 <file path="js/utils/aabb.js">
 export function intersects(a, b) {
   return a.x < b.x + b.width &&
@@ -1920,91 +2065,133 @@ dist/
 }
 </file>
 
+<file path="css/game.css">
+#overlay-layer {
+  position: absolute; inset: 0;
+  pointer-events: none;
+}
+#overlay-layer > div {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+#game-over-overlay {
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  pointer-events: auto;
+  gap: 18px;
+  padding: 24px;
+}
+#game-over-overlay h1 { font-size: 22px; letter-spacing: 1px; }
+#game-over-overlay p { font-size: 11px; line-height: 1.8; }
+#restart-btn {
+  font-family: inherit;
+  font-size: 11px;
+  padding: 14px 22px;
+  background: #c0392b;
+  color: #fff;
+  border: 2px solid #fff;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+#restart-btn:active { background: #e74c3c; }
+#audio-unlock-overlay {
+  top: 12px; left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 2px solid #f1c40f;
+  border-radius: 6px;
+  pointer-events: auto;
+  cursor: pointer;
+  max-width: 90vw;
+}
+#audio-unlock-overlay p { font-size: 10px; line-height: 1.5; color: #f1c40f; }
+#loading-overlay {
+  inset: 0;
+  background: #000;
+  pointer-events: auto;
+}
+#loading-overlay p { font-size: 14px; letter-spacing: 2px; }
+
+/* ===== Level Intro ===== */
+#level-intro {
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 40;
+  padding: 0 20px;
+  max-width: 92vw;
+}
+#level-intro-title {
+  font-family: "Press Start 2P", "Courier New", monospace;
+  font-size: 40px;
+  color: #ffffff;
+  letter-spacing: 3px;
+  text-shadow:
+    0 0 12px rgba(255, 255, 255, 0.55),
+    0 0 24px rgba(255, 200, 40, 0.5),
+    4px 4px 0 #000,
+    -2px -2px 0 #000;
+  margin-bottom: 16px;
+}
+#level-intro-subtitle {
+  font-family: "Press Start 2P", "Courier New", monospace;
+  font-size: 14px;
+  color: #ffe066;
+  letter-spacing: 2px;
+  text-shadow:
+    0 0 8px rgba(0, 0, 0, 0.9),
+    3px 3px 0 #000;
+}
+@media (max-width: 480px) {
+  #level-intro-title { font-size: 22px; letter-spacing: 2px; }
+  #level-intro-subtitle { font-size: 10px; letter-spacing: 1px; }
+}
+
+/* ===== Finale greeting ===== */
+#finale-greeting {
+  /* Приподнято выше вертикального центра viewport. */
+  top: 35%; left: 50%;
+  transform: translate(-50%, -50%) scale(0.4);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 60;
+  font-family: "Press Start 2P", "Courier New", monospace;
+  font-size: 44px;
+  color: #fff;
+  letter-spacing: 3px;
+  text-shadow:
+    0 0 14px #ff3fd0,
+    0 0 28px #ffcc00,
+    4px 4px 0 #000,
+    -2px -2px 0 #000;
+  padding: 0 12px;
+  max-width: 92vw;
+}
+#finale-greeting:not(.hidden) {
+  animation: finale-greeting-in 1100ms cubic-bezier(.2,.8,.2,1.1) both;
+}
+@keyframes finale-greeting-in {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+  60%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@media (max-width: 480px) {
+  #finale-greeting { font-size: 22px; letter-spacing: 1px; }
+}
+</file>
+
 <file path="js/config/assets.config.js">
 export const ASSETS_CONFIG = {
   heart: "./assets/images/ui/heart.png",
   trap: "./assets/images/traps/boss-trap.webp",
   hazard: "./assets/images/ui/spikes.png",
   bossProjectile: "./assets/images/boss/projectile.webp"
-};
-</file>
-
-<file path="js/config/boss.config.js">
-export const BOSS_CONFIG = {
-  id: "boss",
-  nickname: "Раиса",
-  size: { width: 128, height: 192 },
-  appearance: {
-    headTexture: "./assets/images/boss/head.webp",
-    bodyTexture: "./assets/images/boss/body.webp"
-  },
-  health: { max: 10 },
-  /** Ровно 5 успешных trap hit убивают босса. */
-  requiredTrapHits: 5,
-  damage: { contact: 2, projectile: 1 },
-  projectile: {
-    intervalMs: 1800,
-    speed: 360,
-    appearance: {
-      texture: "./assets/images/boss/projectile.webp"
-    }
-  },
-  audio: {
-    damage: "./assets/audio/boss/damage.mp3",
-    extra: {
-      firstVisible: "./assets/audio/boss/visible.mp3",
-      projectile: "./assets/audio/boss/projectile.mp3"
-    }
-  },
-  visibilitySoundDelayMs: 1000
-};
-</file>
-
-<file path="js/config/game.config.js">
-export const GAME_CONFIG = {
-  physics: {
-    gravity: 2000,
-    maxFallSpeed: 1200,
-    fixedTimeStep: 1 / 60,
-    maxFrameDeltaMs: 250
-  },
-  viewport: {
-    referenceHeight: 720,
-    /** Общий zoom игрового мира. 1.0 = без изменений, >1 = крупнее. */
-    zoom: 1.1
-  },
-  camera: {
-    /**
-     * Доля высоты viewport, на которой удерживается центр цели.
-     * 0.5 — центр экрана, <0.5 — цель выше (камера визуально ниже, меньше пустоты сверху).
-     */
-    verticalAnchor: 0.45
-  },
-  visuals: {
-    /** Визуальный overlap головы поверх тела (доля от bodyH). */
-    headBodyOverlap: 0.15,
-    /** Затемнение фонового слоя во время салютов (0..1). */
-    finaleBackgroundDim: 0.5
-  },
-  damage: {
-    enemy: 0.5,
-    hazard: 0.5,
-    bossContact: 2,
-    bossProjectile: 1
-  },
-  player: {
-    maxHealth: 3,
-    invulnerabilityMs: 1000
-  },
-  nickname: {
-    maxLength: 24,
-    offsetY: 12
-  },
-  debug: {
-    enabled: false
-  },
-  stompTolerance: 8,
-  dropThroughDurationMs: 200
 };
 </file>
 
@@ -2016,112 +2203,6 @@ export const TRAP_DEFAULT_CONFIG = {
   activeDurationMs: 350,
   rearmMs: 1500
 };
-</file>
-
-<file path="js/entities/Character.js">
-import { Entity } from "./Entity.js";
-import { GAME_CONFIG } from "../config/game.config.js";
-import { truncateNickname } from "../utils/text.js";
-
-export class Character extends Entity {
-  constructor(config = {}) {
-    super(config);
-    this.nickname = config.nickname || "";
-    this.appearance = config.appearance || {};
-    this.size = config.size || { width: 64, height: 96 };
-    this.width = this.size.width;
-    this.height = this.size.height;
-    this.maxHealth = (config.health && config.health.max) || 1;
-    this.health = this.maxHealth;
-    this.audio = config.audio || {};
-    this.resourceManager = null;
-    this.visibilityScheduled = false;
-    this.visibilityTimerId = 0;
-    this.visibilitySoundDelayMs = config.visibilitySoundDelayMs ?? 1000;
-    /** Визуальное направление взгляда: -1 влево, +1 вправо. Hitbox не меняется. */
-    this.facing = config.facing === -1 ? -1 : 1;
-  }
-
-  setResourceManager(rm) { this.resourceManager = rm; }
-
-  getNicknameDisplay() {
-    if (!this.nickname) return "";
-    return truncateNickname(this.nickname, GAME_CONFIG.nickname.maxLength);
-  }
-
-  _drawTexture(ctx, key, rect) {
-    const path = this.appearance[key + "Texture"];
-    const img = path && this.resourceManager ? this.resourceManager.getImage(path) : null;
-    if (img) {
-      ctx.drawImage(img, rect.x, rect.y, rect.width, rect.height);
-      return;
-    }
-    ctx.fillStyle = key === "head" ? "#c08040" : "#4060c0";
-    ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-    ctx.strokeStyle = "#000";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(rect.x + 1, rect.y + 1, rect.width - 2, rect.height - 2);
-  }
-
-  /**
-   * Голова визуально перекрывает верх тела на `headBodyOverlap` от bodyH.
-   * Внешние границы (this.y .. this.y + this.height) и hitbox НЕ меняются.
-   * Body рисуется первым, head — поверх, чтобы overlap отображался как голова сверху.
-   */
-  render(ctx) {
-    const headH = (this.appearance.head && this.appearance.head.height) || Math.round(this.height * 0.4);
-    const bodyH = this.height - headH;
-    const overlap = Math.round(bodyH * GAME_CONFIG.visuals.headBodyOverlap);
-
-    const flip = this.facing < 0;
-    if (flip) {
-      ctx.save();
-      const cx = this.x + this.width / 2;
-      ctx.translate(cx, 0);
-      ctx.scale(-1, 1);
-      ctx.translate(-cx, 0);
-    }
-
-    // Body слегка выше — перекрывается головой сверху.
-    this._drawTexture(ctx, "body", {
-      x: this.x,
-      y: this.y + headH - overlap,
-      width: this.width,
-      height: bodyH + overlap
-    });
-    // Head поверх — накрывает верхнюю часть body.
-    this._drawTexture(ctx, "head", {
-      x: this.x,
-      y: this.y,
-      width: this.width,
-      height: headH
-    });
-
-    if (flip) ctx.restore();
-  }
-
-  renderNickname(ctx) {
-    const text = this.getNicknameDisplay();
-    if (!text) return;
-    ctx.save();
-    ctx.font = '12px "Press Start 2P", "Courier New", monospace';
-    ctx.textAlign = "center";
-    ctx.textBaseline = "bottom";
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "#000";
-    ctx.fillStyle = "#fff";
-    const cx = this.x + this.width / 2;
-    const ty = this.y - GAME_CONFIG.nickname.offsetY;
-    ctx.strokeText(text, cx, ty);
-    ctx.fillText(text, cx, ty);
-    ctx.restore();
-  }
-
-  takeDamage(amount) {
-    this.health = Math.max(0, this.health - amount);
-    if (this.health <= 0) this.alive = false;
-  }
-}
 </file>
 
 <file path="js/entities/Friend.js">
@@ -2425,6 +2506,161 @@ export class Trap {
       }
     }
   }
+}
+</file>
+
+<file path="js/managers/AudioManager.js">
+import { Logger } from "../utils/Logger.js";
+
+export class AudioManager {
+  constructor(resourceManager) {
+    this.rm = resourceManager;
+    this.unlocked = false;
+    this.enabled = true;
+    this._currentMusic = null;
+    this._currentMusicPath = null;
+    this._currentMusicScope = null;
+    // Флаг синхронного старта: пока play() не resolved/rejected,
+    // повторные запросы на тот же трек игнорируются.
+    this._musicStarting = false;
+    this._musicNodes = new Set();
+  }
+
+  markUnlocked() {
+    this.unlocked = true;
+    // Autoplay мог быть заблокирован на старте — если трек запрошен,
+    // но реально не играет и не стартует сейчас, повторяем попытку.
+    if (this._currentMusicPath && !this._currentMusic && !this._musicStarting) {
+      this._attemptStartMusic(this._currentMusicPath);
+    }
+  }
+
+  // ============ ONE-SHOT SOUNDS ============
+  play(path) {
+    if (!path || !this.enabled) return;
+    const base = this.rm.getAudio(path);
+    if (!base) return;
+    try {
+      const node = base.cloneNode();
+      node.volume = 1.0;
+      const p = node.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    } catch (e) {
+      Logger.warn("Audio play failed:", e);
+    }
+  }
+
+  // ============ MUSIC ============
+  ensureMusic(path, scope = null) {
+    this.playMusic(path, scope);
+  }
+
+  playMusic(path, scope = null) {
+    if (!path || !this.enabled) return;
+
+    if (this._currentMusicPath === path) {
+      // Тот же трек. Если уже играет или стартует — no-op.
+      if ((this._currentMusic && !this._currentMusic.paused) || this._musicStarting) {
+        return;
+      }
+      // Иначе предыдущая попытка не удалась — повторяем.
+      this._attemptStartMusic(path);
+      return;
+    }
+
+    this.stopMusic();
+    this._currentMusicPath = path;
+    this._currentMusicScope = scope;
+    this._attemptStartMusic(path);
+  }
+
+  _attemptStartMusic(path) {
+    const base = this.rm.getAudio(path);
+    if (!base) {
+      // Аудио ещё не загружено — грузим и стартуем, когда придёт.
+      this.rm.loadAudio(path).then((audio) => {
+        if (!audio) return;
+        if (this._currentMusicPath !== path) return;
+        this._startMusicNode(path);
+      }).catch(() => {});
+      return;
+    }
+    this._startMusicNode(path);
+  }
+
+  _startMusicNode(path) {
+    if (this._currentMusicPath !== path) return;
+    if (this._currentMusic && !this._currentMusic.paused) return;
+    if (this._musicStarting) return;
+
+    const base = this.rm.getAudio(path);
+    if (!base) return;
+
+    let node;
+    try {
+      node = base.cloneNode();
+      node.loop = true;
+      node.volume = 0.6;
+    } catch (e) {
+      Logger.warn("Music node creation failed:", e);
+      return;
+    }
+
+    this._musicStarting = true;
+
+    const onSuccess = () => {
+      this._musicStarting = false;
+      if (this._currentMusicPath !== path) {
+        // Трек сменён, пока мы стартовали — глушим новый node.
+        try { node.pause(); } catch { /* ignore */ }
+        return;
+      }
+      if (this._currentMusic === node) return;
+      if (this._currentMusic && this._currentMusic !== node) {
+        try { this._currentMusic.pause(); } catch { /* ignore */ }
+        this._musicNodes.delete(this._currentMusic);
+      }
+      this._currentMusic = node;
+      this._musicNodes.add(node);
+      node.addEventListener("ended", () => {
+        this._musicNodes.delete(node);
+        if (this._currentMusic === node) this._currentMusic = null;
+      }, { once: true });
+    };
+
+    const onFail = () => {
+      this._musicStarting = false;
+      // Autoplay отклонён. Оставляем _currentMusic = null,
+      // чтобы markUnlocked() мог корректно повторить запуск.
+    };
+
+    try {
+      const result = node.play();
+      if (result && typeof result.then === "function") {
+        result.then(onSuccess).catch(onFail);
+      } else {
+        // Старые браузеры: play() без Promise — считаем, что старт начался.
+        onSuccess();
+      }
+    } catch (e) {
+      this._musicStarting = false;
+      Logger.warn("Music play failed:", e);
+    }
+  }
+
+  stopMusic() {
+    this._musicStarting = false;
+    if (this._currentMusic) {
+      try { this._currentMusic.pause(); } catch { /* ignore */ }
+      try { this._currentMusic.currentTime = 0; } catch { /* ignore */ }
+      this._musicNodes.delete(this._currentMusic);
+      this._currentMusic = null;
+    }
+    this._currentMusicPath = null;
+    this._currentMusicScope = null;
+  }
+
+  getCurrentMusicPath() { return this._currentMusicPath; }
 }
 </file>
 
@@ -3051,292 +3287,34 @@ export class FireworksSystem {
 }
 </file>
 
-<file path="js/rendering/Renderer.js">
-import { GAME_CONFIG } from "../config/game.config.js";
-
-export class Renderer {
-  /**
-   * @param {HTMLCanvasElement} canvas
-   * @param {import("./Camera.js").Camera} camera
-   * @param {import("../managers/ResourceManager.js").ResourceManager} [resourceManager]
-   */
-  constructor(canvas, camera, resourceManager = null) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext("2d");
-    this.camera = camera;
-    this.resourceManager = resourceManager;
-    this.physicalScale = 1;
-    this.visibleWorldWidth = 1280;
-    this.visibleWorldHeight = 720;
-    this.dpr = 1;
-  }
-
-  resize() {
-    const dpr = window.devicePixelRatio || 1;
-    this.dpr = dpr;
-    const cssW = this.canvas.clientWidth || window.innerWidth;
-    const cssH = this.canvas.clientHeight || window.innerHeight;
-    const W = Math.max(1, Math.round(cssW * dpr));
-    const H = Math.max(1, Math.round(cssH * dpr));
-    if (this.canvas.width !== W) this.canvas.width = W;
-    if (this.canvas.height !== H) this.canvas.height = H;
-    const zoom = GAME_CONFIG.viewport.zoom || 1;
-    this.physicalScale = (H / GAME_CONFIG.viewport.referenceHeight) * zoom;
-    this.visibleWorldWidth = W / this.physicalScale;
-    this.visibleWorldHeight = H / this.physicalScale;
-    this.camera.setViewport(this.visibleWorldWidth, this.visibleWorldHeight);
-  }
-
-  beginFrame() {
-    const ctx = this.ctx;
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.fillStyle = "#1a1a2e";
-    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    const s = this.physicalScale;
-    ctx.setTransform(s, 0, 0, s, -this.camera.x * s, -this.camera.y * s);
-  }
-
-  endFrame() {
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-  }
-
-  /**
-   * Пропорциональный "cover": сохраняет aspect ratio, центрирует, кропает лишнее.
-   * Используется для всех level-текстур (background/ground/platform).
-   */
-  _drawCover(img, dx, dy, dw, dh) {
-    if (!img || !img.width || !img.height || dw <= 0 || dh <= 0) return;
-    const imgRatio = img.width / img.height;
-    const rectRatio = dw / dh;
-    let sx, sy, sw, sh;
-    if (imgRatio > rectRatio) {
-      sh = img.height;
-      sw = sh * rectRatio;
-      sx = (img.width - sw) / 2;
-      sy = 0;
-    } else {
-      sw = img.width;
-      sh = sw / rectRatio;
-      sx = 0;
-      sy = (img.height - sh) / 2;
+<file path="js/config/boss.config.js">
+export const BOSS_CONFIG = {
+  id: "boss",
+  nickname: "Раиса",
+  size: { width: 128, height: 192 },
+  appearance: {
+    headTexture: "./assets/images/boss/head.png",
+    bodyTexture: "./assets/images/boss/body.png"
+  },
+  health: { max: 10 },
+  /** Ровно 5 успешных trap hit убивают босса. */
+  requiredTrapHits: 5,
+  damage: { contact: 2, projectile: 1 },
+  projectile: {
+    intervalMs: 1800,
+    speed: 200,
+    appearance: {
+      texture: "./assets/images/ui/sperm.png"
     }
-    this.ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
-  }
-
-  _getImage(path) {
-    if (!path || !this.resourceManager) return null;
-    return this.resourceManager.getImage(path);
-  }
-
-  drawBackground(level) {
-    const ctx = this.ctx;
-    const camX = this.camera.x;
-    const camY = this.camera.y;
-    const vw = this.visibleWorldWidth;
-    const vh = this.visibleWorldHeight;
-
-    const visuals = level && level.visuals;
-    const bgPath = visuals && visuals.background && visuals.background.texture;
-    const bgImg = this._getImage(bgPath);
-    if (bgImg) {
-      this._drawCover(bgImg, camX, camY, vw, vh);
-      return;
+  },
+  audio: {
+    damage: "./assets/audio/boss/damage.mp3",
+    extra: {
+      firstVisible: "./assets/audio/boss/visible.mp3",
+      projectile: "./assets/audio/boss/projectile.mp3"
     }
-
-    // Fallback: gradient sky + distant hills
-    const grad = ctx.createLinearGradient(0, camY, 0, camY + vh);
-    grad.addColorStop(0, "#3a6ea5");
-    grad.addColorStop(1, "#88b0d0");
-    ctx.fillStyle = grad;
-    ctx.fillRect(camX, camY, vw, vh);
-    ctx.fillStyle = "#2c4d66";
-    const baseY = camY + vh - 80;
-    const step = 240;
-    const startX = Math.floor(camX / step) * step - step;
-    for (let x = startX; x < camX + vw + step; x += step) {
-      ctx.beginPath();
-      ctx.moveTo(x, baseY + 80);
-      ctx.lineTo(x + step / 2, baseY - 60);
-      ctx.lineTo(x + step, baseY + 80);
-      ctx.closePath();
-      ctx.fill();
-    }
-  }
-
-  /**
-   * Полупрозрачное затемнение ТОЛЬКО фонового слоя (viewport-область).
-   * Вызывается между drawBackground и fireworks/platforms.
-   */
-  drawBackgroundDim() {
-    const ctx = this.ctx;
-    const alpha = GAME_CONFIG.visuals.finaleBackgroundDim;
-    ctx.save();
-    ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
-    ctx.fillRect(
-      this.camera.x,
-      this.camera.y,
-      this.visibleWorldWidth,
-      this.visibleWorldHeight
-    );
-    ctx.restore();
-  }
-
-  drawPlatforms(level) {
-    const ctx = this.ctx;
-    const visuals = level && level.visuals;
-    const groundImg = this._getImage(visuals && visuals.ground && visuals.ground.texture);
-    const platformImg = this._getImage(visuals && visuals.platform && visuals.platform.texture);
-
-    for (const p of level.platforms) {
-      const isGround = p.type === "solid" && p.id === "ground";
-      const img = isGround ? groundImg : platformImg;
-
-      if (img) {
-        this._drawCover(img, p.x, p.y, p.width, p.height);
-        continue;
-      }
-
-      // Fallback
-      if (p.type === "solid") {
-        ctx.fillStyle = "#5a4632";
-        ctx.fillRect(p.x, p.y, p.width, p.height);
-        ctx.fillStyle = "#7d6247";
-        ctx.fillRect(p.x, p.y, p.width, Math.min(8, p.height));
-      } else {
-        ctx.fillStyle = "#8a6a44";
-        ctx.fillRect(p.x, p.y, p.width, p.height);
-        ctx.fillStyle = "#c39a68";
-        ctx.fillRect(p.x, p.y, p.width, Math.min(4, p.height));
-      }
-    }
-  }
-
-  drawObstacles(level) {
-    if (!level.obstacles) return;
-    const ctx = this.ctx;
-    for (const o of level.obstacles) {
-      ctx.fillStyle = "#4d3b2a";
-      ctx.fillRect(o.x, o.y, o.width, o.height);
-      ctx.strokeStyle = "#2c2117";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(o.x + 1, o.y + 1, o.width - 2, o.height - 2);
-    }
-  }
-
-  drawHazards(level) {
-    if (!level.hazards) return;
-    const ctx = this.ctx;
-    for (const h of level.hazards) {
-      const img = h.texture && this.resourceManager
-        ? this.resourceManager.getImage(h.texture)
-        : null;
-      if (img) {
-        ctx.drawImage(img, h.x, h.y, h.width, h.height);
-        continue;
-      }
-      ctx.fillStyle = "#c0392b";
-      ctx.fillRect(h.x, h.y, h.width, h.height);
-      ctx.fillStyle = "#e74c3c";
-      const teeth = Math.floor(h.width / 12);
-      for (let i = 0; i < teeth; i++) {
-        ctx.beginPath();
-        ctx.moveTo(h.x + i * 12, h.y);
-        ctx.lineTo(h.x + i * 12 + 6, h.y - 6);
-        ctx.lineTo(h.x + i * 12 + 12, h.y);
-        ctx.closePath();
-        ctx.fill();
-      }
-    }
-  }
-
-  drawExit(level, debug = false) {
-    if (!debug) return;
-    const ctx = this.ctx;
-    const e = level.exit;
-    if (!e) return;
-    ctx.strokeStyle = "#00ff00";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(e.x, e.y, e.width, e.height);
-  }
-
-  drawEntities(entities) {
-    for (const e of entities) {
-      if (!e.alive) continue;
-      e.render(this.ctx);
-    }
-    for (const e of entities) {
-      if (!e.alive) continue;
-      if (typeof e.renderNickname === "function") e.renderNickname(this.ctx);
-    }
-  }
-
-  drawWorldBounds(level) {
-    const ctx = this.ctx;
-    ctx.strokeStyle = "rgba(255,255,255,0.15)";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(0, 0, level.world.width, level.world.height);
-  }
-
-  drawDebug(camera, entities, level) {
-    const ctx = this.ctx;
-    ctx.strokeStyle = "#00ff00";
-    ctx.lineWidth = 1;
-    for (const e of entities) {
-      if (!e.alive) continue;
-      ctx.strokeRect(e.x, e.y, e.width, e.height);
-    }
-    ctx.strokeStyle = "#ff00ff";
-    ctx.strokeRect(camera.x, camera.y, camera.viewportWidth, camera.viewportHeight);
-  }
-}
-</file>
-
-<file path="js/config/enemies.config.js">
-export const ENEMY_BASE_CONFIG = {
-  size: { width: 64, height: 96 },
-  health: { max: 1 },
-  damage: { contact: 0.5 },
-  movement: { speed: 100 },
+  },
   visibilitySoundDelayMs: 1000
-};
-
-export const ENEMY_TYPE_1_CONFIG = {
-  type: "enemy-1",
-  nickname: "Максимка",
-  appearance: {
-    headTexture: "./assets/images/enemies/type-1/head.png",
-    bodyTexture: "./assets/images/enemies/type-1/body.png"
-  },
-  audio: {
-    damage: "./assets/audio/enemies/type-1/damage.mp3",
-    extra: { firstVisible: "./assets/audio/enemies/type-1/visible.mp3" }
-  }
-};
-
-export const ENEMY_TYPE_2_CONFIG = {
-  type: "enemy-2",
-  nickname: "Богданчик",
-  appearance: {
-    headTexture: "./assets/images/enemies/type-2/head.png",
-    bodyTexture: "./assets/images/enemies/type-2/body.png"
-  },
-  audio: {
-    damage: "./assets/audio/enemies/type-2/damage.mp3",
-    extra: { firstVisible: "./assets/audio/enemies/type-2/visible.mp3" }
-  }
-};
-
-export const ENEMY_TYPE_3_CONFIG = {
-  type: "enemy-3",
-  nickname: "Деревянко",
-  appearance: {
-    headTexture: "./assets/images/enemies/type-3/head.png",
-    bodyTexture: "./assets/images/enemies/type-3/body.png"
-  },
-  audio: {
-    damage: "./assets/audio/enemies/type-3/damage.mp3",
-    extra: { firstVisible: "./assets/audio/enemies/type-3/visible.mp3" }
-  }
 };
 </file>
 
@@ -3384,6 +3362,47 @@ export const FINALE_CONFIG = Object.freeze({
     ]
   }
 });
+</file>
+
+<file path="js/config/game.config.js">
+export const GAME_CONFIG = {
+  physics: {
+    gravity: 2000,
+    maxFallSpeed: 1200,
+    fixedTimeStep: 1 / 60,
+    maxFrameDeltaMs: 250
+  },
+  viewport: {
+    referenceHeight: 720,
+    zoom: 1.6
+  },
+  camera: {
+    verticalAnchor: 0.4
+  },
+  visuals: {
+    headBodyOverlap: 0.15,
+    finaleBackgroundDim: 0.5
+  },
+  damage: {
+    enemy: 0.5,
+    hazard: 0.5,
+    bossContact: 2,
+    bossProjectile: 1
+  },
+  player: {
+    maxHealth: 3,
+    invulnerabilityMs: 1000
+  },
+  nickname: {
+    maxLength: 24,
+    offsetY: 12
+  },
+  debug: {
+    enabled: false
+  },
+  stompTolerance: 8,
+  dropThroughDurationMs: 200
+};
 </file>
 
 <file path="js/config/player.config.js">
@@ -3765,14 +3784,409 @@ export class Game {
 }
 </file>
 
+<file path="js/entities/Character.js">
+import { Entity } from "./Entity.js";
+import { GAME_CONFIG } from "../config/game.config.js";
+import { truncateNickname } from "../utils/text.js";
+
+export class Character extends Entity {
+  constructor(config = {}) {
+    super(config);
+    this.nickname = config.nickname || "";
+    this.appearance = config.appearance || {};
+    this.size = config.size || { width: 64, height: 96 };
+    this.width = this.size.width;
+    this.height = this.size.height;
+    this.maxHealth = (config.health && config.health.max) || 1;
+    this.health = this.maxHealth;
+    this.audio = config.audio || {};
+    this.resourceManager = null;
+    this.visibilityScheduled = false;
+    this.visibilityTimerId = 0;
+    this.visibilitySoundDelayMs = config.visibilitySoundDelayMs ?? 1000;
+    this.facing = config.facing === -1 ? -1 : 1;
+  }
+
+  setResourceManager(rm) { this.resourceManager = rm; }
+
+  getNicknameDisplay() {
+    if (!this.nickname) return "";
+    return truncateNickname(this.nickname, GAME_CONFIG.nickname.maxLength);
+  }
+
+  _getBaseHeadHeight() {
+    return (this.appearance.head && this.appearance.head.height) || Math.round(this.height * 0.4);
+  }
+
+  _getHeadScale() {
+    const s = this.appearance.headScale;
+    return (typeof s === "number" && s > 0) ? s : 1;
+  }
+
+  /**
+   * Визуальный top головы с учётом headScale.
+   * Используется для позиционирования nickname над реальной визуальной
+   * верхней границей головы, а не над hitbox. При headScale === 1
+   * возвращает this.y (совпадает с прежним поведением).
+   */
+  getVisualHeadTop() {
+    const headScale = this._getHeadScale();
+    const baseHeadH = this._getBaseHeadHeight();
+    if (headScale === 1) return this.y;
+    const scaledHeadH = baseHeadH * headScale;
+    const baseCenterY = this.y + baseHeadH / 2;
+    return baseCenterY - scaledHeadH / 2;
+  }
+
+  _drawTexture(ctx, key, rect) {
+    const path = this.appearance[key + "Texture"];
+    const img = path && this.resourceManager ? this.resourceManager.getImage(path) : null;
+    if (img) {
+      ctx.drawImage(img, rect.x, rect.y, rect.width, rect.height);
+      return;
+    }
+    ctx.fillStyle = key === "head" ? "#c08040" : "#4060c0";
+    ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(rect.x + 1, rect.y + 1, rect.width - 2, rect.height - 2);
+  }
+
+  render(ctx) {
+    const headScale = this._getHeadScale();
+    const baseHeadH = this._getBaseHeadHeight();
+    const bodyH = this.height - baseHeadH;
+    const overlap = Math.round(bodyH * GAME_CONFIG.visuals.headBodyOverlap);
+
+    // Визуальная голова масштабируется вокруг её естественного центра.
+    // Hitbox (this.x/this.y/this.width/this.height) не меняется.
+    const scaledHeadH = baseHeadH * headScale;
+    const scaledHeadW = this.width * headScale;
+    const baseCenterX = this.x + this.width / 2;
+    const baseCenterY = this.y + baseHeadH / 2;
+    const headRect = {
+      x: baseCenterX - scaledHeadW / 2,
+      y: baseCenterY - scaledHeadH / 2,
+      width: scaledHeadW,
+      height: scaledHeadH
+    };
+
+    const flip = this.facing < 0;
+    if (flip) {
+      ctx.save();
+      const cx = this.x + this.width / 2;
+      ctx.translate(cx, 0);
+      ctx.scale(-1, 1);
+      ctx.translate(-cx, 0);
+    }
+
+    // Body слегка уходит под голову — бесшовное соединение.
+    this._drawTexture(ctx, "body", {
+      x: this.x,
+      y: this.y + baseHeadH - overlap,
+      width: this.width,
+      height: bodyH + overlap
+    });
+    // Head рисуется поверх body.
+    this._drawTexture(ctx, "head", headRect);
+
+    if (flip) ctx.restore();
+  }
+
+  renderNickname(ctx) {
+    const text = this.getNicknameDisplay();
+    if (!text) return;
+    const visualTop = this.getVisualHeadTop();
+    ctx.save();
+    ctx.font = '12px "Press Start 2P", "Courier New", monospace';
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#000";
+    ctx.fillStyle = "#fff";
+    const cx = this.x + this.width / 2;
+    const ty = visualTop - GAME_CONFIG.nickname.offsetY;
+    ctx.strokeText(text, cx, ty);
+    ctx.fillText(text, cx, ty);
+    ctx.restore();
+  }
+
+  takeDamage(amount) {
+    this.health = Math.max(0, this.health - amount);
+    if (this.health <= 0) this.alive = false;
+  }
+}
+</file>
+
+<file path="js/rendering/Renderer.js">
+import { GAME_CONFIG } from "../config/game.config.js";
+import { SurfaceTextureFactory } from "./SurfaceTextureFactory.js";
+
+export class Renderer {
+  /**
+   * @param {HTMLCanvasElement} canvas
+   * @param {import("./Camera.js").Camera} camera
+   * @param {import("../managers/ResourceManager.js").ResourceManager} [resourceManager]
+   */
+  constructor(canvas, camera, resourceManager = null) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext("2d");
+    this.camera = camera;
+    this.resourceManager = resourceManager;
+    this.surfaceFactory = new SurfaceTextureFactory();
+    this.physicalScale = 1;
+    this.visibleWorldWidth = 1280;
+    this.visibleWorldHeight = 720;
+    this.dpr = 1;
+  }
+
+  resize() {
+    const dpr = window.devicePixelRatio || 1;
+    this.dpr = dpr;
+    const cssW = this.canvas.clientWidth || window.innerWidth;
+    const cssH = this.canvas.clientHeight || window.innerHeight;
+    const W = Math.max(1, Math.round(cssW * dpr));
+    const H = Math.max(1, Math.round(cssH * dpr));
+    if (this.canvas.width !== W) this.canvas.width = W;
+    if (this.canvas.height !== H) this.canvas.height = H;
+    const zoom = GAME_CONFIG.viewport.zoom || 1;
+    this.physicalScale = (H / GAME_CONFIG.viewport.referenceHeight) * zoom;
+    this.visibleWorldWidth = W / this.physicalScale;
+    this.visibleWorldHeight = H / this.physicalScale;
+    this.camera.setViewport(this.visibleWorldWidth, this.visibleWorldHeight);
+  }
+
+  beginFrame() {
+    const ctx = this.ctx;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = "#1a1a2e";
+    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    const s = this.physicalScale;
+    ctx.setTransform(s, 0, 0, s, -this.camera.x * s, -this.camera.y * s);
+  }
+
+  endFrame() {
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+
+  _drawCover(img, dx, dy, dw, dh) {
+    if (!img || !img.width || !img.height || dw <= 0 || dh <= 0) return;
+    const imgRatio = img.width / img.height;
+    const rectRatio = dw / dh;
+    let sx, sy, sw, sh;
+    if (imgRatio > rectRatio) {
+      sh = img.height;
+      sw = sh * rectRatio;
+      sx = (img.width - sw) / 2;
+      sy = 0;
+    } else {
+      sw = img.width;
+      sh = sw / rectRatio;
+      sx = 0;
+      sy = (img.height - sh) / 2;
+    }
+    this.ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+  }
+
+  _getImage(path) {
+    if (!path || !this.resourceManager) return null;
+    return this.resourceManager.getImage(path);
+  }
+
+  drawBackground(level) {
+    const ctx = this.ctx;
+    const camX = this.camera.x;
+    const camY = this.camera.y;
+    const vw = this.visibleWorldWidth;
+    const vh = this.visibleWorldHeight;
+
+    const visuals = level && level.visuals;
+    const bgPath = visuals && visuals.background && visuals.background.texture;
+    const bgImg = this._getImage(bgPath);
+    if (bgImg) {
+      this._drawCover(bgImg, camX, camY, vw, vh);
+      return;
+    }
+
+    const grad = ctx.createLinearGradient(0, camY, 0, camY + vh);
+    grad.addColorStop(0, "#3a6ea5");
+    grad.addColorStop(1, "#88b0d0");
+    ctx.fillStyle = grad;
+    ctx.fillRect(camX, camY, vw, vh);
+    ctx.fillStyle = "#2c4d66";
+    const baseY = camY + vh - 80;
+    const step = 240;
+    const startX = Math.floor(camX / step) * step - step;
+    for (let x = startX; x < camX + vw + step; x += step) {
+      ctx.beginPath();
+      ctx.moveTo(x, baseY + 80);
+      ctx.lineTo(x + step / 2, baseY - 60);
+      ctx.lineTo(x + step, baseY + 80);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  drawBackgroundDim() {
+    const ctx = this.ctx;
+    const alpha = GAME_CONFIG.visuals.finaleBackgroundDim;
+    ctx.save();
+    ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+    ctx.fillRect(
+      this.camera.x,
+      this.camera.y,
+      this.visibleWorldWidth,
+      this.visibleWorldHeight
+    );
+    ctx.restore();
+  }
+
+  drawPlatforms(level) {
+    const themeId = (level && level.surfaceTheme) || "hospital";
+    const ctx = this.ctx;
+    for (const p of level.platforms) {
+      const isGround = p.type === "solid" && p.id === "ground";
+      this.surfaceFactory.drawSurface(ctx, themeId, p, isGround ? "ground" : "platform");
+    }
+  }
+
+  drawObstacles(level) {
+    if (!level.obstacles) return;
+    const ctx = this.ctx;
+    for (const o of level.obstacles) {
+      ctx.fillStyle = "#4d3b2a";
+      ctx.fillRect(o.x, o.y, o.width, o.height);
+      ctx.strokeStyle = "#2c2117";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(o.x + 1, o.y + 1, o.width - 2, o.height - 2);
+    }
+  }
+
+  drawHazards(level) {
+    if (!level.hazards) return;
+    const ctx = this.ctx;
+    for (const h of level.hazards) {
+      const img = h.texture && this.resourceManager
+        ? this.resourceManager.getImage(h.texture)
+        : null;
+      if (img) {
+        ctx.drawImage(img, h.x, h.y, h.width, h.height);
+        continue;
+      }
+      ctx.fillStyle = "#c0392b";
+      ctx.fillRect(h.x, h.y, h.width, h.height);
+      ctx.fillStyle = "#e74c3c";
+      const teeth = Math.floor(h.width / 12);
+      for (let i = 0; i < teeth; i++) {
+        ctx.beginPath();
+        ctx.moveTo(h.x + i * 12, h.y);
+        ctx.lineTo(h.x + i * 12 + 6, h.y - 6);
+        ctx.lineTo(h.x + i * 12 + 12, h.y);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+  }
+
+  drawExit(level, debug = false) {
+    if (!debug) return;
+    const ctx = this.ctx;
+    const e = level.exit;
+    if (!e) return;
+    ctx.strokeStyle = "#00ff00";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(e.x, e.y, e.width, e.height);
+  }
+
+  drawEntities(entities) {
+    for (const e of entities) {
+      if (!e.alive) continue;
+      e.render(this.ctx);
+    }
+    for (const e of entities) {
+      if (!e.alive) continue;
+      if (typeof e.renderNickname === "function") e.renderNickname(this.ctx);
+    }
+  }
+
+  drawWorldBounds(level) {
+    const ctx = this.ctx;
+    ctx.strokeStyle = "rgba(255,255,255,0.15)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, 0, level.world.width, level.world.height);
+  }
+
+  drawDebug(camera, entities, level) {
+    const ctx = this.ctx;
+    ctx.strokeStyle = "#00ff00";
+    ctx.lineWidth = 1;
+    for (const e of entities) {
+      if (!e.alive) continue;
+      ctx.strokeRect(e.x, e.y, e.width, e.height);
+    }
+    ctx.strokeStyle = "#ff00ff";
+    ctx.strokeRect(camera.x, camera.y, camera.viewportWidth, camera.viewportHeight);
+  }
+}
+</file>
+
+<file path="js/config/enemies.config.js">
+export const ENEMY_BASE_CONFIG = {
+  size: { width: 64, height: 96 },
+  health: { max: 1 },
+  damage: { contact: 0.5 },
+  movement: { speed: 100 },
+  visibilitySoundDelayMs: 1000
+};
+
+export const ENEMY_TYPE_1_CONFIG = {
+  type: "enemy-1",
+  nickname: "Максимка",
+  appearance: {
+    headTexture: "./assets/images/enemies/type-1/head.png",
+    bodyTexture: "./assets/images/enemies/type-1/body.png"
+  },
+  audio: {
+    damage: "./assets/audio/enemies/type-1/damage.mp3",
+    extra: { firstVisible: "./assets/audio/enemies/type-1/extra.mp3" }
+  }
+};
+
+export const ENEMY_TYPE_2_CONFIG = {
+  type: "enemy-2",
+  nickname: "Богданчик",
+  appearance: {
+    headTexture: "./assets/images/enemies/type-2/head.png",
+    bodyTexture: "./assets/images/enemies/type-2/body.png",
+    headScale: 1.3
+  },
+  audio: {
+    damage: "./assets/audio/enemies/type-2/damage.mp3",
+    extra: { firstVisible: "./assets/audio/enemies/type-2/extra.mp3" }
+  }
+};
+
+export const ENEMY_TYPE_3_CONFIG = {
+  type: "enemy-3",
+  nickname: "Деревянко",
+  appearance: {
+    headTexture: "./assets/images/enemies/type-3/head.png",
+    bodyTexture: "./assets/images/enemies/type-3/body.png"
+  },
+  audio: {
+    damage: "./assets/audio/enemies/type-3/damage.mp3",
+    extra: { firstVisible: "./assets/audio/enemies/type-3/extra.mp3" }
+  }
+};
+</file>
+
 <file path="js/levels/level-2.config.js">
 export const LEVEL_2 = {
   id: 2,
   music: "./assets/audio/level-2/Toly Summer - Цените Жизнь.mp3",
+  surfaceTheme: "school",
   visuals: {
-    background: { texture: "./assets/images/levels/level-2/background.png" },
-    ground: { texture: "./assets/images/levels/level-2/ground.png" },
-    platform: { texture: "./assets/images/levels/level-2/platform.png" }
+    background: { texture: "./assets/images/ui/level2.png" }
   },
   world: { width: 3800, height: 720 },
   playerSpawn: { x: 120, y: 500 },
@@ -3814,10 +4228,9 @@ export const LEVEL_2 = {
 export const LEVEL_4 = {
   id: 4,
   music: "./assets/audio/level-4/Light Club - Blizzard.mp3",
+  surfaceTheme: "oldDorm",
   visuals: {
-    background: { texture: "./assets/images/levels/level-4/background.png" },
-    ground: { texture: "./assets/images/levels/level-4/ground.png" },
-    platform: { texture: "./assets/images/levels/level-4/platform.png" }
+    background: { texture: "./assets/images/ui/level4.png" }
   },
   world: { width: 5000, height: 720 },
   playerSpawn: { x: 120, y: 500 },
@@ -3864,242 +4277,6 @@ export const LEVEL_4 = {
     { id: "e4-6", type: "enemy3", spawn: { x: 3550, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 3550, y: 544 }, { x: 3850, y: 544 }] } }
   ],
   exit: { x: 4860, y: 0, width: 80, height: 720 }
-};
-</file>
-
-<file path="js/config/friends.config.js">
-/**
- * Конфигурация всех 12 типов Friend.
- * У Friend НЕТ damage-звука; есть только один spawn-звук.
- * Соглашения по структуре совпадают с enemies.config.js.
- *
- * Механика появления:
- *  - На каждом уровне (1–5) при нормальном входе выполняется один roll.
- *    С вероятностью FRIEND_RANDOM_SPAWN.chance появляется ровно один Friend.
- *  - Максимум один Friend helper на уровень.
- *  - Результат roll-а кэшируется LevelManager-ом и переиспользуется при restart
- *    того же уровня, чтобы layout не менялся.
- *  - Если на Level 5 helper уже появился, FinaleController НЕ создаёт дубликат
- *    этого типа — 12 уникальных типов присутствуют в финале ровно по одному.
- */
-
-export const FRIEND_BASE_CONFIG = {
-  size: { width: 64, height: 96 },
-  health: { max: 1 },
-  movement: {
-    speed: 180,
-    jumpVelocity: -700,
-    stompBounceVelocity: -420
-  }
-};
-
-export const FRIEND_RANDOM_SPAWN = Object.freeze({
-  chance: 0.40,
-  disabledLevelIds: []
-});
-
-function buildFriendConfig(n, nickname) {
-  return {
-    type: `friend-${n}`,
-    nickname,
-    size: { ...FRIEND_BASE_CONFIG.size },
-    health: { ...FRIEND_BASE_CONFIG.health },
-    movement: { ...FRIEND_BASE_CONFIG.movement },
-    appearance: {
-      headTexture: `./assets/images/friends/type${n}/head.png`,
-      bodyTexture: `./assets/images/friends/type${n}/body.png`
-    },
-    audio: {
-      spawn: `./assets/audio/friends/type-${n}/spawn.mp3`
-    }
-  };
-}
-
-export const FRIEND_TYPE_1_CONFIG = buildFriendConfig(1, "Вита");
-export const FRIEND_TYPE_2_CONFIG = buildFriendConfig(2, "Иван");
-export const FRIEND_TYPE_3_CONFIG = buildFriendConfig(3, "Тина");
-export const FRIEND_TYPE_4_CONFIG = buildFriendConfig(4, "Полина");
-export const FRIEND_TYPE_5_CONFIG = buildFriendConfig(5, "Марина");
-export const FRIEND_TYPE_6_CONFIG = buildFriendConfig(6, "Настя");
-export const FRIEND_TYPE_7_CONFIG = buildFriendConfig(7, "Настя");
-export const FRIEND_TYPE_8_CONFIG = buildFriendConfig(8, "Алиса");
-export const FRIEND_TYPE_9_CONFIG = buildFriendConfig(9, "9мышей");
-export const FRIEND_TYPE_10_CONFIG = buildFriendConfig(10, "Кай Ангел");
-export const FRIEND_TYPE_11_CONFIG = buildFriendConfig(11, "Кира");
-export const FRIEND_TYPE_12_CONFIG = buildFriendConfig(12, "L");
-
-export const FRIEND_CONFIG_BY_TYPE = Object.freeze({
-  "friend-1": FRIEND_TYPE_1_CONFIG,
-  "friend-2": FRIEND_TYPE_2_CONFIG,
-  "friend-3": FRIEND_TYPE_3_CONFIG,
-  "friend-4": FRIEND_TYPE_4_CONFIG,
-  "friend-5": FRIEND_TYPE_5_CONFIG,
-  "friend-6": FRIEND_TYPE_6_CONFIG,
-  "friend-7": FRIEND_TYPE_7_CONFIG,
-  "friend-8": FRIEND_TYPE_8_CONFIG,
-  "friend-9": FRIEND_TYPE_9_CONFIG,
-  "friend-10": FRIEND_TYPE_10_CONFIG,
-  "friend-11": FRIEND_TYPE_11_CONFIG,
-  "friend-12": FRIEND_TYPE_12_CONFIG
-});
-
-export const FRIEND_TYPES_ORDERED = Object.freeze([
-  "friend-1", "friend-2", "friend-3", "friend-4",
-  "friend-5", "friend-6", "friend-7", "friend-8",
-  "friend-9", "friend-10", "friend-11", "friend-12"
-]);
-</file>
-
-<file path="js/levels/level-1.config.js">
-export const LEVEL_1 = {
-  id: 1,
-  music: "./assets/audio/level-1/opening 1 - Death Note.mp3",
-  visuals: {
-    background: { texture: "./assets/images/ui/balasiha.jpeg" },
-    ground: { texture: "./assets/images/levels/level-1/ground.png" },
-    platform: { texture: "./assets/images/levels/level-1/platform.png" }
-  },
-  world: { width: 3200, height: 720 },
-  playerSpawn: { x: 120, y: 500 },
-  platforms: [
-    { id: "ground", type: "solid", x: 0, y: 640, width: 3200, height: 80 },
-    { id: "p1", type: "oneWay", x: 400, y: 500, width: 220, height: 24 },
-    { id: "p2", type: "oneWay", x: 780, y: 420, width: 220, height: 24 },
-    { id: "p3", type: "oneWay", x: 1200, y: 500, width: 220, height: 24 },
-    { id: "p4", type: "oneWay", x: 1600, y: 460, width: 220, height: 24 },
-    { id: "p5", type: "oneWay", x: 2100, y: 420, width: 220, height: 24 },
-    { id: "p6", type: "oneWay", x: 2600, y: 500, width: 220, height: 24 }
-  ],
-  obstacles: [
-    { id: "o1", x: 600, y: 560, width: 40, height: 80 },
-    { id: "o2", x: 1500, y: 560, width: 40, height: 80 },
-    { id: "o3", x: 2400, y: 560, width: 40, height: 80 }
-  ],
-  hazards: [
-    { id: "h1", x: 1000, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
-    { id: "h2", x: 1850, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
-    { id: "h3", x: 2700, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" }
-  ],
-  enemies: [
-    { id: "e1-1", type: "enemy1", spawn: { x: 900, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 900, y: 544 }, { x: 1250, y: 544 }] } },
-    { id: "e1-2", type: "enemy2", spawn: { x: 1650, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 1650, y: 544 }, { x: 2000, y: 544 }] } },
-    // Enemy Type 3 запрещён на Level 1. Пул равновероятно даёт enemy1/enemy2.
-    { id: "e1-3", type: ["enemy1", "enemy2"], spawn: { x: 2350, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2350, y: 544 }, { x: 2750, y: 544 }] } }
-  ],
-  exit: { x: 3080, y: 0, width: 80, height: 720 }
-};
-</file>
-
-<file path="js/levels/level-3.config.js">
-export const LEVEL_3 = {
-  id: 3,
-  music: "./assets/audio/level-3/Kai Angel, 9mice-LIPSTICK.mp3",
-  visuals: {
-    background: { texture: "./assets/images/ui/balasiha.jpeg" },
-    ground: { texture: "./assets/images/ui/asphalt.png" },
-    platform: { texture: "./assets/images/ui/asphalt.png" }
-  },
-  world: { width: 4400, height: 720 },
-  playerSpawn: { x: 120, y: 500 },
-  platforms: [
-    { id: "ground", type: "solid", x: 0, y: 640, width: 4400, height: 80 },
-    { id: "p1", type: "oneWay", x: 320, y: 500, width: 200, height: 24 },
-    { id: "p2", type: "oneWay", x: 620, y: 400, width: 200, height: 24 },
-    { id: "p3", type: "oneWay", x: 960, y: 480, width: 220, height: 24 },
-    { id: "p4", type: "oneWay", x: 1320, y: 400, width: 220, height: 24 },
-    { id: "p5", type: "oneWay", x: 1700, y: 500, width: 220, height: 24 },
-    { id: "p6", type: "oneWay", x: 2080, y: 400, width: 220, height: 24 },
-    { id: "p7", type: "oneWay", x: 2480, y: 480, width: 220, height: 24 },
-    { id: "p8", type: "oneWay", x: 2880, y: 420, width: 220, height: 24 },
-    { id: "p9", type: "oneWay", x: 3300, y: 500, width: 220, height: 24 },
-    { id: "p10", type: "oneWay", x: 3720, y: 420, width: 220, height: 24 }
-  ],
-  obstacles: [
-    { id: "o1", x: 520, y: 560, width: 40, height: 80 },
-    { id: "o2", x: 1120, y: 520, width: 40, height: 120 },
-    { id: "o3", x: 1620, y: 560, width: 40, height: 80 },
-    { id: "o4", x: 2250, y: 520, width: 40, height: 120 },
-    { id: "o5", x: 3050, y: 560, width: 40, height: 80 },
-    { id: "o6", x: 3900, y: 520, width: 40, height: 120 }
-  ],
-  hazards: [
-    { id: "h1", x: 850, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
-    { id: "h2", x: 1450, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
-    { id: "h3", x: 2050, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
-    { id: "h4", x: 2650, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
-    { id: "h5", x: 3300, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" }
-  ],
-  enemies: [
-    { id: "e3-1", type: "enemy1", spawn: { x: 720, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 720, y: 544 }, { x: 1050, y: 544 }] } },
-    { id: "e3-2", type: "enemy2", spawn: { x: 1300, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 1300, y: 544 }, { x: 1600, y: 544 }] } },
-    // Enemy Type 3 запрещён на Level 3. Пул равновероятно даёт enemy1/enemy2.
-    { id: "e3-3", type: ["enemy1", "enemy2"], spawn: { x: 1900, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 1900, y: 544 }, { x: 2200, y: 544 }] } },
-    { id: "e3-4", type: "enemy1", spawn: { x: 2450, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2450, y: 544 }, { x: 2750, y: 544 }] } },
-    { id: "e3-5", type: "enemy2", spawn: { x: 3100, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 3100, y: 544 }, { x: 3400, y: 544 }] } }
-  ],
-  exit: { x: 4260, y: 0, width: 80, height: 720 }
-};
-</file>
-
-<file path="js/levels/level-5.config.js">
-export const LEVEL_5 = {
-  id: 5,
-  music: "./assets/audio/level-5/Pharaon - Дико Например Gay Remix.mp3",
-  visuals: {
-    background: { texture: "./assets/images/levels/level-5/background.png" },
-    ground: { texture: "./assets/images/levels/level-5/ground.png" },
-    platform: { texture: "./assets/images/levels/level-5/platform.png" }
-  },
-  world: { width: 2400, height: 720 },
-  playerSpawn: { x: 120, y: 500 },
-  platforms: [
-    { id: "ground", type: "solid", x: 0, y: 640, width: 2400, height: 80 },
-    { id: "p1", type: "oneWay", x: 400, y: 480, width: 200, height: 24 },
-    { id: "p2", type: "oneWay", x: 900, y: 480, width: 200, height: 24 },
-    { id: "p3", type: "oneWay", x: 1400, y: 480, width: 200, height: 24 },
-    { id: "p4", type: "oneWay", x: 1850, y: 480, width: 200, height: 24 }
-  ],
-  obstacles: [
-    { id: "o1", x: 300, y: 560, width: 40, height: 80 },
-    { id: "o2", x: 800, y: 560, width: 40, height: 80 },
-    { id: "o3", x: 1300, y: 560, width: 40, height: 80 },
-    { id: "o4", x: 1800, y: 560, width: 40, height: 80 }
-  ],
-  hazards: [
-    { id: "h1", x: 600, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
-    { id: "h2", x: 1050, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
-    { id: "h3", x: 1600, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
-    { id: "h4", x: 2100, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" }
-  ],
-  enemies: [
-    { id: "e5-1", type: "enemy1", spawn: { x: 500, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 500, y: 544 }, { x: 750, y: 544 }] } },
-    { id: "e5-2", type: "enemy2", spawn: { x: 1000, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 1000, y: 544 }, { x: 1250, y: 544 }] } },
-    { id: "e5-3", type: "enemy3", spawn: { x: 1500, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 1500, y: 544 }, { x: 1750, y: 544 }] } },
-    { id: "e5-4", type: "enemy1", spawn: { x: 2000, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2000, y: 544 }, { x: 2250, y: 544 }] } }
-  ],
-  // НЕТ массива friends — Friends здесь появляются только через FinaleController
-  // после BOSS_DEFEATED, либо как random helper (40%) при загрузке уровня.
-  boss: { x: 2100, y: 448 },
-  bossTraps: [
-    {
-      id: "boss-trap-01",
-      trigger: { x: 300, y: 560, width: 80, height: 80 },
-      damageZone: { x: 2060, y: 440, width: 200, height: 220 },
-      activeDurationMs: 350, rearmMs: 1500
-    },
-    {
-      id: "boss-trap-02",
-      trigger: { x: 1300, y: 560, width: 80, height: 80 },
-      damageZone: { x: 2080, y: 460, width: 200, height: 200 },
-      activeDurationMs: 350, rearmMs: 1500
-    },
-    {
-      id: "boss-trap-03",
-      trigger: { x: 700, y: 560, width: 80, height: 80 },
-      damageZone: { x: 2100, y: 440, width: 200, height: 200 },
-      activeDurationMs: 350, rearmMs: 1500
-    }
-  ]
 };
 </file>
 
@@ -4378,6 +4555,235 @@ export class FinaleController {
 }
 </file>
 
+<file path="js/config/friends.config.js">
+/**
+ * Конфигурация всех 12 типов Friend.
+ * У Friend НЕТ damage-звука; есть только один spawn-звук.
+ * Соглашения по структуре совпадают с enemies.config.js.
+ *
+ * Механика появления:
+ *  - На каждом уровне (1–5) при нормальном входе выполняется один roll.
+ *    С вероятностью FRIEND_RANDOM_SPAWN.chance появляется ровно один Friend.
+ *  - Максимум один Friend helper на уровень.
+ *  - Результат roll-а кэшируется LevelManager-ом и переиспользуется при restart
+ *    того же уровня, чтобы layout не менялся.
+ *  - Если на Level 5 helper уже появился, FinaleController НЕ создаёт дубликат
+ *    этого типа — 12 уникальных типов присутствуют в финале ровно по одному.
+ */
+
+export const FRIEND_BASE_CONFIG = {
+  size: { width: 64, height: 96 },
+  health: { max: 1 },
+  movement: {
+    speed: 180,
+    jumpVelocity: -700,
+    stompBounceVelocity: -420
+  }
+};
+
+export const FRIEND_RANDOM_SPAWN = Object.freeze({
+  chance: 0.40,
+  disabledLevelIds: []
+});
+
+function buildFriendConfig(n, nickname) {
+  return {
+    type: `friend-${n}`,
+    nickname,
+    size: { ...FRIEND_BASE_CONFIG.size },
+    health: { ...FRIEND_BASE_CONFIG.health },
+    movement: { ...FRIEND_BASE_CONFIG.movement },
+    appearance: {
+      headTexture: `./assets/images/friends/type${n}/head.png`,
+      bodyTexture: `./assets/images/friends/type${n}/body.png`
+    },
+    audio: {
+      spawn: `./assets/audio/friends/friend-${n}/extra.mp3`
+    }
+  };
+}
+
+export const FRIEND_TYPE_1_CONFIG = buildFriendConfig(1, "Вита");
+export const FRIEND_TYPE_2_CONFIG = buildFriendConfig(2, "Иван");
+export const FRIEND_TYPE_3_CONFIG = buildFriendConfig(3, "Тина");
+export const FRIEND_TYPE_4_CONFIG = buildFriendConfig(4, "Полина");
+export const FRIEND_TYPE_5_CONFIG = buildFriendConfig(5, "Марина");
+export const FRIEND_TYPE_6_CONFIG = buildFriendConfig(6, "Настя");
+export const FRIEND_TYPE_7_CONFIG = buildFriendConfig(7, "Настя");
+export const FRIEND_TYPE_8_CONFIG = buildFriendConfig(8, "Алиса");
+export const FRIEND_TYPE_9_CONFIG = buildFriendConfig(9, "9мышей");
+export const FRIEND_TYPE_10_CONFIG = buildFriendConfig(10, "Кай Ангел");
+export const FRIEND_TYPE_11_CONFIG = buildFriendConfig(11, "Кира");
+export const FRIEND_TYPE_12_CONFIG = buildFriendConfig(12, "L");
+
+export const FRIEND_CONFIG_BY_TYPE = Object.freeze({
+  "friend-1": FRIEND_TYPE_1_CONFIG,
+  "friend-2": FRIEND_TYPE_2_CONFIG,
+  "friend-3": FRIEND_TYPE_3_CONFIG,
+  "friend-4": FRIEND_TYPE_4_CONFIG,
+  "friend-5": FRIEND_TYPE_5_CONFIG,
+  "friend-6": FRIEND_TYPE_6_CONFIG,
+  "friend-7": FRIEND_TYPE_7_CONFIG,
+  "friend-8": FRIEND_TYPE_8_CONFIG,
+  "friend-9": FRIEND_TYPE_9_CONFIG,
+  "friend-10": FRIEND_TYPE_10_CONFIG,
+  "friend-11": FRIEND_TYPE_11_CONFIG,
+  "friend-12": FRIEND_TYPE_12_CONFIG
+});
+
+export const FRIEND_TYPES_ORDERED = Object.freeze([
+  "friend-1", "friend-2", "friend-3", "friend-4",
+  "friend-5", "friend-6", "friend-7", "friend-8",
+  "friend-9", "friend-10", "friend-11", "friend-12"
+]);
+</file>
+
+<file path="js/levels/level-1.config.js">
+export const LEVEL_1 = {
+  id: 1,
+  music: "./assets/audio/level-1/opening 1 - Death Note.mp3",
+  surfaceTheme: "hospital",
+  visuals: {
+    background: { texture: "./assets/images/ui/level1.png" }
+  },
+  world: { width: 3200, height: 720 },
+  playerSpawn: { x: 120, y: 500 },
+  platforms: [
+    { id: "ground", type: "solid", x: 0, y: 640, width: 3200, height: 80 },
+    { id: "p1", type: "oneWay", x: 400, y: 500, width: 220, height: 24 },
+    { id: "p2", type: "oneWay", x: 780, y: 420, width: 220, height: 24 },
+    { id: "p3", type: "oneWay", x: 1200, y: 500, width: 220, height: 24 },
+    { id: "p4", type: "oneWay", x: 1600, y: 460, width: 220, height: 24 },
+    { id: "p5", type: "oneWay", x: 2100, y: 420, width: 220, height: 24 },
+    { id: "p6", type: "oneWay", x: 2600, y: 500, width: 220, height: 24 }
+  ],
+  obstacles: [
+    { id: "o1", x: 600, y: 560, width: 40, height: 80 },
+    { id: "o2", x: 1500, y: 560, width: 40, height: 80 },
+    { id: "o3", x: 2400, y: 560, width: 40, height: 80 }
+  ],
+  hazards: [
+    { id: "h1", x: 1000, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h2", x: 1850, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h3", x: 2700, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" }
+  ],
+  enemies: [
+    { id: "e1-1", type: "enemy1", spawn: { x: 900, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 900, y: 544 }, { x: 1250, y: 544 }] } },
+    { id: "e1-2", type: "enemy2", spawn: { x: 1650, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 1650, y: 544 }, { x: 2000, y: 544 }] } },
+    { id: "e1-3", type: ["enemy1", "enemy2"], spawn: { x: 2350, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2350, y: 544 }, { x: 2750, y: 544 }] } }
+  ],
+  exit: { x: 3080, y: 0, width: 80, height: 720 }
+};
+</file>
+
+<file path="js/levels/level-3.config.js">
+export const LEVEL_3 = {
+  id: 3,
+  music: "./assets/audio/level-3/Kai Angel, 9mice-LIPSTICK.mp3",
+  surfaceTheme: "city",
+  visuals: {
+    background: { texture: "./assets/images/ui/level3.png" }
+  },
+  world: { width: 4400, height: 720 },
+  playerSpawn: { x: 120, y: 500 },
+  platforms: [
+    { id: "ground", type: "solid", x: 0, y: 640, width: 4400, height: 80 },
+    { id: "p1", type: "oneWay", x: 320, y: 500, width: 200, height: 24 },
+    { id: "p2", type: "oneWay", x: 620, y: 400, width: 200, height: 24 },
+    { id: "p3", type: "oneWay", x: 960, y: 480, width: 220, height: 24 },
+    { id: "p4", type: "oneWay", x: 1320, y: 400, width: 220, height: 24 },
+    { id: "p5", type: "oneWay", x: 1700, y: 500, width: 220, height: 24 },
+    { id: "p6", type: "oneWay", x: 2080, y: 400, width: 220, height: 24 },
+    { id: "p7", type: "oneWay", x: 2480, y: 480, width: 220, height: 24 },
+    { id: "p8", type: "oneWay", x: 2880, y: 420, width: 220, height: 24 },
+    { id: "p9", type: "oneWay", x: 3300, y: 500, width: 220, height: 24 },
+    { id: "p10", type: "oneWay", x: 3720, y: 420, width: 220, height: 24 }
+  ],
+  obstacles: [
+    { id: "o1", x: 520, y: 560, width: 40, height: 80 },
+    { id: "o2", x: 1120, y: 520, width: 40, height: 120 },
+    { id: "o3", x: 1620, y: 560, width: 40, height: 80 },
+    { id: "o4", x: 2250, y: 520, width: 40, height: 120 },
+    { id: "o5", x: 3050, y: 560, width: 40, height: 80 },
+    { id: "o6", x: 3900, y: 520, width: 40, height: 120 }
+  ],
+  hazards: [
+    { id: "h1", x: 850, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h2", x: 1450, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h3", x: 2050, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h4", x: 2650, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h5", x: 3300, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" }
+  ],
+  enemies: [
+    { id: "e3-1", type: "enemy1", spawn: { x: 720, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 720, y: 544 }, { x: 1050, y: 544 }] } },
+    { id: "e3-2", type: "enemy2", spawn: { x: 1300, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 1300, y: 544 }, { x: 1600, y: 544 }] } },
+    { id: "e3-3", type: ["enemy1", "enemy2"], spawn: { x: 1900, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 1900, y: 544 }, { x: 2200, y: 544 }] } },
+    { id: "e3-4", type: "enemy1", spawn: { x: 2450, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2450, y: 544 }, { x: 2750, y: 544 }] } },
+    { id: "e3-5", type: "enemy2", spawn: { x: 3100, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 3100, y: 544 }, { x: 3400, y: 544 }] } }
+  ],
+  exit: { x: 4260, y: 0, width: 80, height: 720 }
+};
+</file>
+
+<file path="js/levels/level-5.config.js">
+export const LEVEL_5 = {
+  id: 5,
+  music: "./assets/audio/level-5/Pharaon - Дико Например Gay Remix.mp3",
+  surfaceTheme: "apartment",
+  visuals: {
+    background: { texture: "./assets/images/ui/level5.png" }
+  },
+  world: { width: 2400, height: 720 },
+  playerSpawn: { x: 120, y: 500 },
+  platforms: [
+    { id: "ground", type: "solid", x: 0, y: 640, width: 2400, height: 80 },
+    { id: "p1", type: "oneWay", x: 400, y: 480, width: 200, height: 24 },
+    { id: "p2", type: "oneWay", x: 900, y: 480, width: 200, height: 24 },
+    { id: "p3", type: "oneWay", x: 1400, y: 480, width: 200, height: 24 },
+    { id: "p4", type: "oneWay", x: 1850, y: 480, width: 200, height: 24 }
+  ],
+  obstacles: [
+    { id: "o1", x: 300, y: 560, width: 40, height: 80 },
+    { id: "o2", x: 800, y: 560, width: 40, height: 80 },
+    { id: "o3", x: 1300, y: 560, width: 40, height: 80 },
+    { id: "o4", x: 1800, y: 560, width: 40, height: 80 }
+  ],
+  hazards: [
+    { id: "h1", x: 600, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h2", x: 1050, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h3", x: 1600, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h4", x: 2100, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" }
+  ],
+  enemies: [
+    { id: "e5-1", type: "enemy1", spawn: { x: 500, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 500, y: 544 }, { x: 750, y: 544 }] } },
+    { id: "e5-2", type: "enemy2", spawn: { x: 1000, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 1000, y: 544 }, { x: 1250, y: 544 }] } },
+    { id: "e5-3", type: "enemy3", spawn: { x: 1500, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 1500, y: 544 }, { x: 1750, y: 544 }] } },
+    { id: "e5-4", type: "enemy1", spawn: { x: 2000, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2000, y: 544 }, { x: 2250, y: 544 }] } }
+  ],
+  boss: { x: 2100, y: 448 },
+  bossTraps: [
+    {
+      id: "boss-trap-01",
+      trigger: { x: 300, y: 560, width: 80, height: 80 },
+      damageZone: { x: 2060, y: 440, width: 200, height: 220 },
+      activeDurationMs: 350, rearmMs: 1500
+    },
+    {
+      id: "boss-trap-02",
+      trigger: { x: 1300, y: 560, width: 80, height: 80 },
+      damageZone: { x: 2080, y: 460, width: 200, height: 200 },
+      activeDurationMs: 350, rearmMs: 1500
+    },
+    {
+      id: "boss-trap-03",
+      trigger: { x: 700, y: 560, width: 80, height: 80 },
+      damageZone: { x: 2100, y: 440, width: 200, height: 200 },
+      activeDurationMs: 350, rearmMs: 1500
+    }
+  ]
+};
+</file>
+
 <file path="js/managers/LevelManager.js">
 import { LEVELS } from "../levels/index.js";
 import { Player } from "../entities/Player.js";
@@ -4410,18 +4816,7 @@ export class LevelManager {
     this.resourceManager = game.resourceManager;
     this.entityManager = game.entityManager;
     this.eventBus = game.eventBus;
-
-    /**
-     * Кэш roll-а случайного Friend helper-а.
-     * Структура: { levelId, spawn:boolean, type:string|null }.
-     * Переиспользуется при restart того же уровня.
-     */
     this._randomFriendState = null;
-
-    /**
-     * Кэш разрешённых enemy-pool-ов.
-     * Структура: { levelId, resolvedEnemies: [...] }.
-     */
     this._enemyLayoutState = null;
   }
 
@@ -4466,7 +4861,7 @@ export class LevelManager {
       this.entityManager.add(e);
     }
 
-    // Случайный Friend (Levels 1–5, 40%, максимум один)
+    // Случайный Friend
     if (friendDecision.spawn && friendDecision.type) {
       const spawnPos = this._findSafeFriendSpawn(cfg);
       const f = createFriend(friendDecision.type, {
@@ -4487,7 +4882,7 @@ export class LevelManager {
       this.boss = boss;
     }
 
-    // Traps. Единый источник истины — BOSS_CONFIG.
+    // Traps
     if (cfg.bossTraps && cfg.bossTraps.length > 0) {
       const requiredHits = BOSS_CONFIG.requiredTrapHits || 5;
       const computedDamage = BOSS_CONFIG.health.max / requiredHits;
@@ -4525,10 +4920,6 @@ export class LevelManager {
 
     return true;
   }
-
-  // ---------------------------------------------------------------------------
-  // Random Friend helper
-  // ---------------------------------------------------------------------------
 
   _getOrCreateRandomFriendDecision(levelId, isRestart) {
     if (isRestart &&
@@ -4592,10 +4983,6 @@ export class LevelManager {
     return false;
   }
 
-  // ---------------------------------------------------------------------------
-  // Enemy pool resolution
-  // ---------------------------------------------------------------------------
-
   _resolveEnemyTypes(enemies, levelId, isRestart) {
     if (isRestart &&
         this._enemyLayoutState &&
@@ -4614,10 +5001,6 @@ export class LevelManager {
     return resolved;
   }
 
-  // ---------------------------------------------------------------------------
-  // Asset preload
-  // ---------------------------------------------------------------------------
-
   async _preloadLevelAssets(cfg, randomFriendType = null, resolvedEnemies = null) {
     const paths = [];
 
@@ -4628,17 +5011,9 @@ export class LevelManager {
       }
     }
 
-    // Level-specific visuals (background / ground / platform)
-    if (cfg.visuals) {
-      if (cfg.visuals.background && cfg.visuals.background.texture) {
-        paths.push(cfg.visuals.background.texture);
-      }
-      if (cfg.visuals.ground && cfg.visuals.ground.texture) {
-        paths.push(cfg.visuals.ground.texture);
-      }
-      if (cfg.visuals.platform && cfg.visuals.platform.texture) {
-        paths.push(cfg.visuals.platform.texture);
-      }
+    // Level visuals: только background. Ground/platform теперь процедурные.
+    if (cfg.visuals && cfg.visuals.background && cfg.visuals.background.texture) {
+      paths.push(cfg.visuals.background.texture);
     }
 
     const enemies = resolvedEnemies || cfg.enemies || [];
@@ -4654,9 +5029,6 @@ export class LevelManager {
       }
     }
 
-    // Boss level: FinaleController создаст ВСЕ 12 типов Friend'ов.
-    // Гарантируем, что все их текстуры попали в кэш ResourceManager
-    // до того, как игрок победит Boss — без "pop-in" в финале.
     if (cfg.boss) {
       for (const typeKey of FRIEND_TYPES_ORDERED) {
         const fc = FRIEND_CONFIG_BY_TYPE[typeKey];
@@ -4735,11 +5107,9 @@ export class LevelManager {
           if (typesUsed.has("enemy2")) paths.push(ENEMY_TYPE_2_CONFIG.appearance.headTexture, ENEMY_TYPE_2_CONFIG.appearance.bodyTexture);
           if (typesUsed.has("enemy3")) paths.push(ENEMY_TYPE_3_CONFIG.appearance.headTexture, ENEMY_TYPE_3_CONFIG.appearance.bodyTexture);
           if (lvl.boss) paths.push(BOSS_CONFIG.appearance.headTexture, BOSS_CONFIG.appearance.bodyTexture);
-          // Level visuals
-          if (lvl.visuals) {
-            if (lvl.visuals.background && lvl.visuals.background.texture) paths.push(lvl.visuals.background.texture);
-            if (lvl.visuals.ground && lvl.visuals.ground.texture) paths.push(lvl.visuals.ground.texture);
-            if (lvl.visuals.platform && lvl.visuals.platform.texture) paths.push(lvl.visuals.platform.texture);
+          // Только background — ground/platform процедурные.
+          if (lvl.visuals && lvl.visuals.background && lvl.visuals.background.texture) {
+            paths.push(lvl.visuals.background.texture);
           }
           await this.resourceManager.loadImages(paths);
         }

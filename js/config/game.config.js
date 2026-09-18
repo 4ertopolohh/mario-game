@@ -16,6 +16,15 @@ export const GAME_CONFIG = {
     headBodyOverlap: 0.15,
     finaleBackgroundDim: 0.5
   },
+  audio: {
+    /**
+     * Коэффициент усиления character SFX через Web Audio GainNode.
+     * HTMLAudioElement.volume ограничен 1.0, поэтому реальное усиление
+     * выполняется здесь. Применяется только к one-shot SFX (play()),
+     * музыка уровней использует собственный volume 0.6 и не усиливается.
+     */
+    sfxGain: 1.6
+  },
   damage: {
     enemy: 0.5,
     hazard: 0.5,

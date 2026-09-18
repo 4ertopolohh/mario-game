@@ -1,10 +1,27 @@
 import { Logger } from "../utils/Logger.js";
+import { GAME_CONFIG } from "../config/game.config.js";
 
 export class AudioManager {
   constructor(resourceManager) {
     this.rm = resourceManager;
     this.unlocked = false;
     this.enabled = true;
+
+    /**
+     * Централизованный коэффициент усиления character SFX.
+     * HTMLAudioElement.volume жёстко ограничен 1.0, поэтому реальное
+     * усиление делается через Web Audio GainNode.
+     */
+    this.sfxGain = (GAME_CONFIG.audio && typeof GAME_CONFIG.audio.sfxGain === "number")
+      ? GAME_CONFIG.audio.sfxGain
+      : 1.0;
+
+    /**
+     * Единственный AudioContext на весь AudioManager. Создаётся лениво,
+     * переиспользуется для всех one-shot SFX. Музыка через него не идёт.
+     */
+    this._audioContext = null;
+
     this._currentMusic = null;
     this._currentMusicPath = null;
     this._currentMusicScope = null;
@@ -14,8 +31,42 @@ export class AudioManager {
     this._musicNodes = new Set();
   }
 
+  /**
+   * Ленивое создание единственного AudioContext.
+   * Возвращает null, если Web Audio недоступен.
+   * @returns {AudioContext|null}
+   */
+  _ensureAudioContext() {
+    if (this._audioContext) return this._audioContext;
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return null;
+      this._audioContext = new Ctx();
+    } catch (e) {
+      Logger.warn("AudioContext unavailable:", e);
+      this._audioContext = null;
+    }
+    return this._audioContext;
+  }
+
+  /**
+   * Пытается вывести контекст из suspended. Ошибки (autoplay-политика)
+   * молча игнорируются — вызывающий код не должен от них зависеть.
+   */
+  _tryResumeAudioContext() {
+    const ctx = this._audioContext;
+    if (!ctx) return;
+    if (ctx.state === "suspended") {
+      const p = ctx.resume();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    }
+  }
+
   markUnlocked() {
     this.unlocked = true;
+    // Готовим Web Audio к воспроизведению усиленных SFX.
+    this._ensureAudioContext();
+    this._tryResumeAudioContext();
     // Autoplay мог быть заблокирован на старте — если трек запрошен,
     // но реально не играет и не стартует сейчас, повторяем попытку.
     if (this._currentMusicPath && !this._currentMusic && !this._musicStarting) {
@@ -24,15 +75,66 @@ export class AudioManager {
   }
 
   // ============ ONE-SHOT SOUNDS ============
+
+  /**
+   * Воспроизведение one-shot character SFX с усилением через Web Audio.
+   * Каждый вызов создаёт свежий клон HTMLAudioElement (сохранена возможность
+   * одновременного воспроизведения одинакового SFX), маршрутизирует его
+   * через GainNode(sfxGain) и очищает граф после ended или отклонённого play().
+   *
+   * Если Web Audio недоступен или создание MediaElementSource упало —
+   * безопасный fallback на HTMLAudioElement.volume = 1.0.
+   */
   play(path) {
     if (!path || !this.enabled) return;
     const base = this.rm.getAudio(path);
     if (!base) return;
+
     try {
       const node = base.cloneNode();
-      node.volume = 1.0;
+
+      const ctx = this._ensureAudioContext();
+      let cleanup = null;
+
+      if (ctx) {
+        this._tryResumeAudioContext();
+        let routed = false;
+        try {
+          const source = ctx.createMediaElementSource(node);
+          const gain = ctx.createGain();
+          gain.gain.value = this.sfxGain;
+          source.connect(gain);
+          gain.connect(ctx.destination);
+
+          let cleaned = false;
+          cleanup = () => {
+            if (cleaned) return;
+            cleaned = true;
+            try { source.disconnect(); } catch { /* ignore */ }
+            try { gain.disconnect(); } catch { /* ignore */ }
+          };
+          node.addEventListener("ended", cleanup, { once: true });
+          routed = true;
+        } catch (e) {
+          Logger.warn("SFX Web Audio routing failed, falling back to volume 1.0:", e);
+          routed = false;
+        }
+        if (!routed) {
+          node.volume = 1.0;
+          cleanup = null;
+        }
+      } else {
+        // Web Audio недоступен — сохраняем прежнее поведение.
+        node.volume = 1.0;
+      }
+
       const p = node.play();
-      if (p && typeof p.catch === "function") p.catch(() => {});
+      if (p && typeof p.catch === "function") {
+        p.catch(() => {
+          // Autoplay отклонён — граф не будет очищен через "ended".
+          if (cleanup) cleanup();
+        });
+      }
     } catch (e) {
       Logger.warn("Audio play failed:", e);
     }

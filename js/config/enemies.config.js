@@ -25,7 +25,10 @@ export const ENEMY_TYPE_2_CONFIG = {
   appearance: {
     headTexture: "./assets/images/enemies/type-2/head.png",
     bodyTexture: "./assets/images/enemies/type-2/body.png",
-    headScale: 1.3
+    // Визуальный масштаб головы относительно её базового центра.
+    // Был 1.3, увеличен ещё на 10%: 1.3 * 1.10 = 1.43.
+    // Hitbox/size/rect не затрагиваются.
+    headScale: 1.43
   },
   audio: {
     damage: "./assets/audio/enemies/type-2/damage.mp3",
