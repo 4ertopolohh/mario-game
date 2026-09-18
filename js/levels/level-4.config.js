@@ -1,6 +1,10 @@
 export const LEVEL_4 = {
   id: 4,
-  music: "./assets/audio/music/level-4.mp3",
+  music: "./assets/audio/level-4/Light Club - Blizzard.mp3",
+  surfaceTheme: "oldDorm",
+  visuals: {
+    background: { texture: "./assets/images/ui/level4.png" }
+  },
   world: { width: 5000, height: 720 },
   playerSpawn: { x: 120, y: 500 },
   platforms: [
@@ -29,13 +33,13 @@ export const LEVEL_4 = {
     { id: "o8", x: 4500, y: 520, width: 40, height: 120 }
   ],
   hazards: [
-    { id: "h1", x: 820, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/hazards/spikes.webp" },
-    { id: "h2", x: 1380, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/hazards/spikes.webp" },
-    { id: "h3", x: 1900, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/hazards/spikes.webp" },
-    { id: "h4", x: 2450, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/hazards/spikes.webp" },
-    { id: "h5", x: 3050, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/hazards/spikes.webp" },
-    { id: "h6", x: 3650, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/hazards/spikes.webp" },
-    { id: "h7", x: 4250, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/hazards/spikes.webp" }
+    { id: "h1", x: 820, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h2", x: 1380, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h3", x: 1900, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h4", x: 2450, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h5", x: 3050, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h6", x: 3650, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h7", x: 4250, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" }
   ],
   enemies: [
     { id: "e4-1", type: "enemy1", spawn: { x: 700, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 700, y: 544 }, { x: 980, y: 544 }] } },

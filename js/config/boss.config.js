@@ -1,10 +1,10 @@
 export const BOSS_CONFIG = {
   id: "boss",
-  nickname: "Босс",
+  nickname: "ЖЫР",
   size: { width: 128, height: 192 },
   appearance: {
-    headTexture: "./assets/images/boss/head.webp",
-    bodyTexture: "./assets/images/boss/body.webp"
+    headTexture: "./assets/images/boss/head.png",
+    bodyTexture: "./assets/images/boss/body.png"
   },
   health: { max: 10 },
   /** Ровно 5 успешных trap hit убивают босса. */
@@ -12,9 +12,9 @@ export const BOSS_CONFIG = {
   damage: { contact: 2, projectile: 1 },
   projectile: {
     intervalMs: 1800,
-    speed: 360,
+    speed: 200,
     appearance: {
-      texture: "./assets/images/boss/projectile.webp"
+      texture: "./assets/images/ui/sperm.png"
     }
   },
   audio: {

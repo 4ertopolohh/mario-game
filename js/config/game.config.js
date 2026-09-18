@@ -6,7 +6,31 @@ export const GAME_CONFIG = {
     maxFrameDeltaMs: 250
   },
   viewport: {
-    referenceHeight: 720
+    referenceHeight: 720,
+    zoom: 1.6
+  },
+  camera: {
+    verticalAnchor: 0.4
+  },
+  visuals: {
+    headBodyOverlap: 0.15,
+    finaleBackgroundDim: 0.5
+  },
+  audio: {
+    /**
+     * Коэффициент усиления character SFX через Web Audio GainNode.
+     * HTMLAudioElement.volume ограничен 1.0, поэтому реальное усиление
+     * выполняется здесь. Применяется только к one-shot SFX (play()),
+     * музыка уровней использует собственный volume и не усиливается.
+     */
+    sfxGain: 10,
+    /**
+     * Громкость фоновой музыки уровней.
+     * Заметно ниже SFX, чтобы character-звуки читались на фоне трека.
+     * Задаётся одним числом: AudioManager применяет его к каждому
+     * looped music node при старте.
+     */
+    musicVolume: 0.30
   },
   damage: {
     enemy: 0.5,

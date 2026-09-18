@@ -1,6 +1,10 @@
 export const LEVEL_1 = {
   id: 1,
-  music: "./assets/audio/music/level-1.mp3",
+  music: "./assets/audio/level-1/opening 1 - Death Note.mp3",
+  surfaceTheme: "hospital",
+  visuals: {
+    background: { texture: "./assets/images/ui/level1.png" }
+  },
   world: { width: 3200, height: 720 },
   playerSpawn: { x: 120, y: 500 },
   platforms: [
@@ -18,14 +22,13 @@ export const LEVEL_1 = {
     { id: "o3", x: 2400, y: 560, width: 40, height: 80 }
   ],
   hazards: [
-    { id: "h1", x: 1000, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/hazards/spikes.webp" },
-    { id: "h2", x: 1850, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/hazards/spikes.webp" },
-    { id: "h3", x: 2700, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/hazards/spikes.webp" }
+    { id: "h1", x: 1000, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h2", x: 1850, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h3", x: 2700, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" }
   ],
   enemies: [
     { id: "e1-1", type: "enemy1", spawn: { x: 900, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 900, y: 544 }, { x: 1250, y: 544 }] } },
     { id: "e1-2", type: "enemy2", spawn: { x: 1650, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 1650, y: 544 }, { x: 2000, y: 544 }] } },
-    // Enemy Type 3 запрещён на Level 1. Пул равновероятно даёт enemy1/enemy2.
     { id: "e1-3", type: ["enemy1", "enemy2"], spawn: { x: 2350, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2350, y: 544 }, { x: 2750, y: 544 }] } }
   ],
   exit: { x: 3080, y: 0, width: 80, height: 720 }

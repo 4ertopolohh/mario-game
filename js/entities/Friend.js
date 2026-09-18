@@ -43,8 +43,15 @@ export class Friend extends Character {
     this.prevX = this.x;
     this.prevY = this.y;
 
+    // Spawn sound lifecycle:
+    //  - _spawnSoundPlayed  — финальный флаг «уже успешно инициирован»
+    //                         (или окончательно отказались от попыток).
+    //  - _spawnSoundAttempts — защита от бесконечных retry, если asset
+    //                          физически отсутствует и loadAudio вернул null.
     this._spawnSoundPlayed = false;
     this._spawnSoundPath = (merged.audio && merged.audio.spawn) || null;
+    this._spawnSoundAttempts = 0;
+    this._spawnSoundMaxAttempts = 300; // ~5s at 60fps
 
     this._holdPosition = false;
     this._holdX = 0;
@@ -72,16 +79,37 @@ export class Friend extends Character {
   update(dt, ctx) {
     if (!this.alive) return;
 
-    // Одноразовый spawn sound
-    if (!this._spawnSoundPlayed) {
-      this._spawnSoundPlayed = true;
-      if (ctx && ctx.audioManager && this._spawnSoundPath) {
-        ctx.audioManager.play(this._spawnSoundPath);
+    // Одноразовый spawn sound.
+    //
+    // Прошлая реализация выставляла `_spawnSoundPlayed = true` ДО вызова
+    // play(). Это приводило к потере звука в двух сценариях:
+    //   1. `LevelManager._preloadLevelAssets()` запускает loadAudios без
+    //      await, поэтому на первом кадре `AudioManager.play()` получает
+    //      `null` из синхронного `getAudio()` — база ещё в Promise.
+    //   2. Первый update может произойти до пользовательского gesture,
+    //      audio context suspended, autoplay policy отклоняет play().
+    //
+    // Теперь маркируем успех только когда play() вернул true (база найдена
+    // и попытка воспроизведения инициирована), и ждём audioManager.unlocked
+    // — после первого gesture Web Audio resume, и звук уже не потеряется.
+    // Счётчик ограничивает retry для полностью отсутствующих MP3.
+    if (!this._spawnSoundPlayed && this._spawnSoundPath) {
+      const am = ctx && ctx.audioManager;
+      if (!am) {
+        // AudioManager отсутствует в контексте — нечего играть, заканчиваем.
+        this._spawnSoundPlayed = true;
+      } else if (am.unlocked) {
+        if (am.play(this._spawnSoundPath)) {
+          this._spawnSoundPlayed = true;
+        } else if (++this._spawnSoundAttempts >= this._spawnSoundMaxAttempts) {
+          // Ассет отсутствует или не загрузился — тихо прекращаем попытки.
+          this._spawnSoundPlayed = true;
+        }
       }
     }
 
-    // Скриптованное удержание позиции (финал использует FinaleController напрямую,
-    // но контракт остаётся).
+    // Скриптованное удержание позиции (финал использует FinaleController
+    // напрямую, но контракт остаётся).
     if (this._holdPosition) {
       const dx = this._holdX - this.x;
       if (Math.abs(dx) <= 1) {

@@ -36,27 +36,27 @@ function buildFriendConfig(n, nickname) {
     health: { ...FRIEND_BASE_CONFIG.health },
     movement: { ...FRIEND_BASE_CONFIG.movement },
     appearance: {
-      headTexture: `./assets/images/friends/type-${n}/head.webp`,
-      bodyTexture: `./assets/images/friends/type-${n}/body.webp`
+      headTexture: `./assets/images/friends/type${n}/head.png`,
+      bodyTexture: `./assets/images/friends/type${n}/body.png`
     },
     audio: {
-      spawn: `./assets/audio/friends/type-${n}/spawn.mp3`
+      spawn: `./assets/audio/friends/friend-${n}/extra.mp3`
     }
   };
 }
 
-export const FRIEND_TYPE_1_CONFIG = buildFriendConfig(1, "Друг 1");
-export const FRIEND_TYPE_2_CONFIG = buildFriendConfig(2, "Друг 2");
-export const FRIEND_TYPE_3_CONFIG = buildFriendConfig(3, "Друг 3");
-export const FRIEND_TYPE_4_CONFIG = buildFriendConfig(4, "Друг 4");
-export const FRIEND_TYPE_5_CONFIG = buildFriendConfig(5, "Друг 5");
-export const FRIEND_TYPE_6_CONFIG = buildFriendConfig(6, "Друг 6");
-export const FRIEND_TYPE_7_CONFIG = buildFriendConfig(7, "Друг 7");
-export const FRIEND_TYPE_8_CONFIG = buildFriendConfig(8, "Друг 8");
-export const FRIEND_TYPE_9_CONFIG = buildFriendConfig(9, "Друг 9");
-export const FRIEND_TYPE_10_CONFIG = buildFriendConfig(10, "Друг 10");
-export const FRIEND_TYPE_11_CONFIG = buildFriendConfig(11, "Друг 11");
-export const FRIEND_TYPE_12_CONFIG = buildFriendConfig(12, "Друг 12");
+export const FRIEND_TYPE_1_CONFIG = buildFriendConfig(1, "Вита");
+export const FRIEND_TYPE_2_CONFIG = buildFriendConfig(2, "Ваня");
+export const FRIEND_TYPE_3_CONFIG = buildFriendConfig(3, "Тина");
+export const FRIEND_TYPE_4_CONFIG = buildFriendConfig(4, "Полина");
+export const FRIEND_TYPE_5_CONFIG = buildFriendConfig(5, "Марина");
+export const FRIEND_TYPE_6_CONFIG = buildFriendConfig(6, "Настя");
+export const FRIEND_TYPE_7_CONFIG = buildFriendConfig(7, "Настя");
+export const FRIEND_TYPE_8_CONFIG = buildFriendConfig(8, "Алиса");
+export const FRIEND_TYPE_9_CONFIG = buildFriendConfig(9, "9мышей");
+export const FRIEND_TYPE_10_CONFIG = buildFriendConfig(10, "Кай Ангел");
+export const FRIEND_TYPE_11_CONFIG = buildFriendConfig(11, "Кира");
+export const FRIEND_TYPE_12_CONFIG = buildFriendConfig(12, "L");
 
 export const FRIEND_CONFIG_BY_TYPE = Object.freeze({
   "friend-1": FRIEND_TYPE_1_CONFIG,

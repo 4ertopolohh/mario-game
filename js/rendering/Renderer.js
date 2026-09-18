@@ -1,4 +1,5 @@
 import { GAME_CONFIG } from "../config/game.config.js";
+import { SurfaceTextureFactory } from "./SurfaceTextureFactory.js";
 
 export class Renderer {
   /**
@@ -11,6 +12,7 @@ export class Renderer {
     this.ctx = canvas.getContext("2d");
     this.camera = camera;
     this.resourceManager = resourceManager;
+    this.surfaceFactory = new SurfaceTextureFactory();
     this.physicalScale = 1;
     this.visibleWorldWidth = 1280;
     this.visibleWorldHeight = 720;
@@ -26,7 +28,8 @@ export class Renderer {
     const H = Math.max(1, Math.round(cssH * dpr));
     if (this.canvas.width !== W) this.canvas.width = W;
     if (this.canvas.height !== H) this.canvas.height = H;
-    this.physicalScale = H / GAME_CONFIG.viewport.referenceHeight;
+    const zoom = GAME_CONFIG.viewport.zoom || 1;
+    this.physicalScale = (H / GAME_CONFIG.viewport.referenceHeight) * zoom;
     this.visibleWorldWidth = W / this.physicalScale;
     this.visibleWorldHeight = H / this.physicalScale;
     this.camera.setViewport(this.visibleWorldWidth, this.visibleWorldHeight);
@@ -45,12 +48,45 @@ export class Renderer {
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
 
+  _drawCover(img, dx, dy, dw, dh) {
+    if (!img || !img.width || !img.height || dw <= 0 || dh <= 0) return;
+    const imgRatio = img.width / img.height;
+    const rectRatio = dw / dh;
+    let sx, sy, sw, sh;
+    if (imgRatio > rectRatio) {
+      sh = img.height;
+      sw = sh * rectRatio;
+      sx = (img.width - sw) / 2;
+      sy = 0;
+    } else {
+      sw = img.width;
+      sh = sw / rectRatio;
+      sx = 0;
+      sy = (img.height - sh) / 2;
+    }
+    this.ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+  }
+
+  _getImage(path) {
+    if (!path || !this.resourceManager) return null;
+    return this.resourceManager.getImage(path);
+  }
+
   drawBackground(level) {
     const ctx = this.ctx;
     const camX = this.camera.x;
     const camY = this.camera.y;
     const vw = this.visibleWorldWidth;
     const vh = this.visibleWorldHeight;
+
+    const visuals = level && level.visuals;
+    const bgPath = visuals && visuals.background && visuals.background.texture;
+    const bgImg = this._getImage(bgPath);
+    if (bgImg) {
+      this._drawCover(bgImg, camX, camY, vw, vh);
+      return;
+    }
+
     const grad = ctx.createLinearGradient(0, camY, 0, camY + vh);
     grad.addColorStop(0, "#3a6ea5");
     grad.addColorStop(1, "#88b0d0");
@@ -70,20 +106,26 @@ export class Renderer {
     }
   }
 
+  drawBackgroundDim() {
+    const ctx = this.ctx;
+    const alpha = GAME_CONFIG.visuals.finaleBackgroundDim;
+    ctx.save();
+    ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+    ctx.fillRect(
+      this.camera.x,
+      this.camera.y,
+      this.visibleWorldWidth,
+      this.visibleWorldHeight
+    );
+    ctx.restore();
+  }
+
   drawPlatforms(level) {
+    const themeId = (level && level.surfaceTheme) || "hospital";
     const ctx = this.ctx;
     for (const p of level.platforms) {
-      if (p.type === "solid") {
-        ctx.fillStyle = "#5a4632";
-        ctx.fillRect(p.x, p.y, p.width, p.height);
-        ctx.fillStyle = "#7d6247";
-        ctx.fillRect(p.x, p.y, p.width, Math.min(8, p.height));
-      } else {
-        ctx.fillStyle = "#8a6a44";
-        ctx.fillRect(p.x, p.y, p.width, p.height);
-        ctx.fillStyle = "#c39a68";
-        ctx.fillRect(p.x, p.y, p.width, Math.min(4, p.height));
-      }
+      const isGround = p.type === "solid" && p.id === "ground";
+      this.surfaceFactory.drawSurface(ctx, themeId, p, isGround ? "ground" : "platform");
     }
   }
 
@@ -110,7 +152,6 @@ export class Renderer {
         ctx.drawImage(img, h.x, h.y, h.width, h.height);
         continue;
       }
-      // Fallback
       ctx.fillStyle = "#c0392b";
       ctx.fillRect(h.x, h.y, h.width, h.height);
       ctx.fillStyle = "#e74c3c";
@@ -127,7 +168,7 @@ export class Renderer {
   }
 
   drawExit(level, debug = false) {
-    if (!debug) return; // Exit невидим в обычном режиме
+    if (!debug) return;
     const ctx = this.ctx;
     const e = level.exit;
     if (!e) return;
