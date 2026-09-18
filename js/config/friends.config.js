@@ -46,7 +46,7 @@ function buildFriendConfig(n, nickname) {
 }
 
 export const FRIEND_TYPE_1_CONFIG = buildFriendConfig(1, "Вита");
-export const FRIEND_TYPE_2_CONFIG = buildFriendConfig(2, "Иван");
+export const FRIEND_TYPE_2_CONFIG = buildFriendConfig(2, "Ваня");
 export const FRIEND_TYPE_3_CONFIG = buildFriendConfig(3, "Тина");
 export const FRIEND_TYPE_4_CONFIG = buildFriendConfig(4, "Полина");
 export const FRIEND_TYPE_5_CONFIG = buildFriendConfig(5, "Марина");

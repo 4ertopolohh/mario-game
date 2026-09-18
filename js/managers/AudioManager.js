@@ -17,6 +17,15 @@ export class AudioManager {
       : 1.0;
 
     /**
+     * Централизованная громкость фоновой музыки.
+     * Раньше была захардкожена внутри _startMusicNode; вынесена в config,
+     * чтобы SFX и музыка микшировались через единый источник истины.
+     */
+    this.musicVolume = (GAME_CONFIG.audio && typeof GAME_CONFIG.audio.musicVolume === "number")
+      ? GAME_CONFIG.audio.musicVolume
+      : 0.5;
+
+    /**
      * Единственный AudioContext на весь AudioManager. Создаётся лениво,
      * переиспользуется для всех one-shot SFX. Музыка через него не идёт.
      */
@@ -78,17 +87,22 @@ export class AudioManager {
 
   /**
    * Воспроизведение one-shot character SFX с усилением через Web Audio.
-   * Каждый вызов создаёт свежий клон HTMLAudioElement (сохранена возможность
-   * одновременного воспроизведения одинакового SFX), маршрутизирует его
-   * через GainNode(sfxGain) и очищает граф после ended или отклонённого play().
    *
-   * Если Web Audio недоступен или создание MediaElementSource упало —
-   * безопасный fallback на HTMLAudioElement.volume = 1.0.
+   * Возвращаемое значение используется вызывающей стороной для корректного
+   * lifecycle-менеджмента одноразовых звуков (например, Friend spawn sound):
+   *   true  — база найдена, клон создан, node.play() инициирован;
+   *   false — путь пуст, звук отключён, либо база ещё не загружена
+   *           (Promise в кэше) / отсутствует (asset failed).
+   * Не-void return value — расширение публичного контракта, старые вызовы
+   * продолжают работать, игнорируя возврат.
+   *
+   * @param {string} path
+   * @returns {boolean}
    */
   play(path) {
-    if (!path || !this.enabled) return;
+    if (!path || !this.enabled) return false;
     const base = this.rm.getAudio(path);
-    if (!base) return;
+    if (!base) return false;
 
     try {
       const node = base.cloneNode();
@@ -135,8 +149,10 @@ export class AudioManager {
           if (cleanup) cleanup();
         });
       }
+      return true;
     } catch (e) {
       Logger.warn("Audio play failed:", e);
+      return false;
     }
   }
 
@@ -190,7 +206,7 @@ export class AudioManager {
     try {
       node = base.cloneNode();
       node.loop = true;
-      node.volume = 0.6;
+      node.volume = this.musicVolume;
     } catch (e) {
       Logger.warn("Music node creation failed:", e);
       return;
