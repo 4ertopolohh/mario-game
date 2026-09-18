@@ -1,4 +1,5 @@
 import { GAME_CONFIG } from "../config/game.config.js";
+import { SurfaceTextureFactory } from "./SurfaceTextureFactory.js";
 
 export class Renderer {
   /**
@@ -11,6 +12,7 @@ export class Renderer {
     this.ctx = canvas.getContext("2d");
     this.camera = camera;
     this.resourceManager = resourceManager;
+    this.surfaceFactory = new SurfaceTextureFactory();
     this.physicalScale = 1;
     this.visibleWorldWidth = 1280;
     this.visibleWorldHeight = 720;
@@ -46,10 +48,6 @@ export class Renderer {
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
 
-  /**
-   * Пропорциональный "cover": сохраняет aspect ratio, центрирует, кропает лишнее.
-   * Используется для всех level-текстур (background/ground/platform).
-   */
   _drawCover(img, dx, dy, dw, dh) {
     if (!img || !img.width || !img.height || dw <= 0 || dh <= 0) return;
     const imgRatio = img.width / img.height;
@@ -89,7 +87,6 @@ export class Renderer {
       return;
     }
 
-    // Fallback: gradient sky + distant hills
     const grad = ctx.createLinearGradient(0, camY, 0, camY + vh);
     grad.addColorStop(0, "#3a6ea5");
     grad.addColorStop(1, "#88b0d0");
@@ -109,10 +106,6 @@ export class Renderer {
     }
   }
 
-  /**
-   * Полупрозрачное затемнение ТОЛЬКО фонового слоя (viewport-область).
-   * Вызывается между drawBackground и fireworks/platforms.
-   */
   drawBackgroundDim() {
     const ctx = this.ctx;
     const alpha = GAME_CONFIG.visuals.finaleBackgroundDim;
@@ -128,32 +121,11 @@ export class Renderer {
   }
 
   drawPlatforms(level) {
+    const themeId = (level && level.surfaceTheme) || "hospital";
     const ctx = this.ctx;
-    const visuals = level && level.visuals;
-    const groundImg = this._getImage(visuals && visuals.ground && visuals.ground.texture);
-    const platformImg = this._getImage(visuals && visuals.platform && visuals.platform.texture);
-
     for (const p of level.platforms) {
       const isGround = p.type === "solid" && p.id === "ground";
-      const img = isGround ? groundImg : platformImg;
-
-      if (img) {
-        this._drawCover(img, p.x, p.y, p.width, p.height);
-        continue;
-      }
-
-      // Fallback
-      if (p.type === "solid") {
-        ctx.fillStyle = "#5a4632";
-        ctx.fillRect(p.x, p.y, p.width, p.height);
-        ctx.fillStyle = "#7d6247";
-        ctx.fillRect(p.x, p.y, p.width, Math.min(8, p.height));
-      } else {
-        ctx.fillStyle = "#8a6a44";
-        ctx.fillRect(p.x, p.y, p.width, p.height);
-        ctx.fillStyle = "#c39a68";
-        ctx.fillRect(p.x, p.y, p.width, Math.min(4, p.height));
-      }
+      this.surfaceFactory.drawSurface(ctx, themeId, p, isGround ? "ground" : "platform");
     }
   }
 

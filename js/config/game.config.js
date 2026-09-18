@@ -7,20 +7,13 @@ export const GAME_CONFIG = {
   },
   viewport: {
     referenceHeight: 720,
-    /** Общий zoom игрового мира. 1.0 = без изменений, >1 = крупнее. */
-    zoom: 1.1
+    zoom: 1.6
   },
   camera: {
-    /**
-     * Доля высоты viewport, на которой удерживается центр цели.
-     * 0.5 — центр экрана, <0.5 — цель выше (камера визуально ниже, меньше пустоты сверху).
-     */
-    verticalAnchor: 0.45
+    verticalAnchor: 0.4
   },
   visuals: {
-    /** Визуальный overlap головы поверх тела (доля от bodyH). */
     headBodyOverlap: 0.15,
-    /** Затемнение фонового слоя во время салютов (0..1). */
     finaleBackgroundDim: 0.5
   },
   damage: {

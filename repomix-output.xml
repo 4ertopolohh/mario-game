@@ -56,40 +56,58 @@ assets/
     enemies/
       type-1/
         body.png
+        head.png
       type-2/
         body.png
+        head.png
       type-3/
         body.png
+        head.png
     friends/
       type1/
         body.png
+        head.png
       type10/
         body.png
+        head.png
       type11/
         body.png
+        head.png
       type12/
         body.png
+        head.png
       type2/
         body.png
+        head.png
       type3/
         body.png
+        head.png
       type4/
         body.png
+        head.png
       type5/
         body.png
       type6/
         body.png
+        head.png
       type7/
         body.png
+        head.png
       type8/
         body.png
+        head.png
       type9/
         body.png
+        head.png
     player/
       body-final.png
       body.png
+      head.png
     ui/
       anal.png
+      asphalt.jpg
+      asphalt.png
+      asphalt.webp
       balasiha.jpeg
       heart.png
       spikes.png
@@ -421,39 +439,6 @@ html, body {
 .hidden { display: none !important; }
 </file>
 
-<file path="js/config/game.config.js">
-export const GAME_CONFIG = {
-  physics: {
-    gravity: 2000,
-    maxFallSpeed: 1200,
-    fixedTimeStep: 1 / 60,
-    maxFrameDeltaMs: 250
-  },
-  viewport: {
-    referenceHeight: 720
-  },
-  damage: {
-    enemy: 0.5,
-    hazard: 0.5,
-    bossContact: 2,
-    bossProjectile: 1
-  },
-  player: {
-    maxHealth: 3,
-    invulnerabilityMs: 1000
-  },
-  nickname: {
-    maxLength: 24,
-    offsetY: 12
-  },
-  debug: {
-    enabled: false
-  },
-  stompTolerance: 8,
-  dropThroughDurationMs: 200
-};
-</file>
-
 <file path="js/config/level-titles.config.js">
 export const LEVEL_TITLES = Object.freeze({
   1: { title: "Уровень 1", subtitle: "Level 1 → Роддом" },
@@ -724,94 +709,6 @@ export class Boss extends Character {
       this.alive = false;
       if (eventBus) eventBus.emit(GameEvents.BOSS_DEFEATED, {});
     }
-  }
-}
-</file>
-
-<file path="js/entities/Character.js">
-import { Entity } from "./Entity.js";
-import { GAME_CONFIG } from "../config/game.config.js";
-import { truncateNickname } from "../utils/text.js";
-
-export class Character extends Entity {
-  constructor(config = {}) {
-    super(config);
-    this.nickname = config.nickname || "";
-    this.appearance = config.appearance || {};
-    this.size = config.size || { width: 64, height: 96 };
-    this.width = this.size.width;
-    this.height = this.size.height;
-    this.maxHealth = (config.health && config.health.max) || 1;
-    this.health = this.maxHealth;
-    this.audio = config.audio || {};
-    this.resourceManager = null;
-    this.visibilityScheduled = false;
-    this.visibilityTimerId = 0;
-    this.visibilitySoundDelayMs = config.visibilitySoundDelayMs ?? 1000;
-    /** Визуальное направление взгляда: -1 влево, +1 вправо. Hitbox не меняется. */
-    this.facing = config.facing === -1 ? -1 : 1;
-  }
-
-  setResourceManager(rm) { this.resourceManager = rm; }
-
-  getNicknameDisplay() {
-    if (!this.nickname) return "";
-    return truncateNickname(this.nickname, GAME_CONFIG.nickname.maxLength);
-  }
-
-  _drawTexture(ctx, key, rect) {
-    const path = this.appearance[key + "Texture"];
-    const img = path && this.resourceManager ? this.resourceManager.getImage(path) : null;
-    if (img) {
-      ctx.drawImage(img, rect.x, rect.y, rect.width, rect.height);
-      return;
-    }
-    ctx.fillStyle = key === "head" ? "#c08040" : "#4060c0";
-    ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-    ctx.strokeStyle = "#000";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(rect.x + 1, rect.y + 1, rect.width - 2, rect.height - 2);
-  }
-
-  render(ctx) {
-    const headH = (this.appearance.head && this.appearance.head.height) || Math.round(this.height * 0.4);
-    const bodyH = this.height - headH;
-
-    const flip = this.facing < 0;
-    if (flip) {
-      ctx.save();
-      const cx = this.x + this.width / 2;
-      ctx.translate(cx, 0);
-      ctx.scale(-1, 1);
-      ctx.translate(-cx, 0);
-    }
-
-    this._drawTexture(ctx, "head", { x: this.x, y: this.y, width: this.width, height: headH });
-    this._drawTexture(ctx, "body", { x: this.x, y: this.y + headH, width: this.width, height: bodyH });
-
-    if (flip) ctx.restore();
-  }
-
-  renderNickname(ctx) {
-    const text = this.getNicknameDisplay();
-    if (!text) return;
-    ctx.save();
-    ctx.font = '12px "Press Start 2P", "Courier New", monospace';
-    ctx.textAlign = "center";
-    ctx.textBaseline = "bottom";
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "#000";
-    ctx.fillStyle = "#fff";
-    const cx = this.x + this.width / 2;
-    const ty = this.y - GAME_CONFIG.nickname.offsetY;
-    ctx.strokeText(text, cx, ty);
-    ctx.fillText(text, cx, ty);
-    ctx.restore();
-  }
-
-  takeDamage(amount) {
-    this.health = Math.max(0, this.health - amount);
-    if (this.health <= 0) this.alive = false;
   }
 }
 </file>
@@ -1724,220 +1621,6 @@ export class StorageManager {
 }
 </file>
 
-<file path="js/rendering/Camera.js">
-export class Camera {
-  constructor() {
-    this.x = 0;
-    this.y = 0;
-    this.viewportWidth = 1280;
-    this.viewportHeight = 720;
-    this.worldWidth = 3200;
-    this.worldHeight = 720;
-  }
-
-  setViewport(w, h) { this.viewportWidth = w; this.viewportHeight = h; }
-  setWorldBounds(w, h) { this.worldWidth = w; this.worldHeight = h; }
-
-  follow(target) {
-    const tcx = target.x + target.width / 2;
-    const tcy = target.y + target.height / 2;
-    let cx = tcx - this.viewportWidth / 2;
-    let cy = tcy - this.viewportHeight / 2;
-    const maxX = Math.max(0, this.worldWidth - this.viewportWidth);
-    const maxY = Math.max(0, this.worldHeight - this.viewportHeight);
-    if (cx < 0) cx = 0; else if (cx > maxX) cx = maxX;
-    if (cy < 0) cy = 0; else if (cy > maxY) cy = maxY;
-    this.x = cx;
-    this.y = cy;
-  }
-
-  isVisible(rect) {
-    return rect.x + rect.width > this.x &&
-           rect.x < this.x + this.viewportWidth &&
-           rect.y + rect.height > this.y &&
-           rect.y < this.y + this.viewportHeight;
-  }
-
-  isCenterVisible(entity) {
-    const cx = entity.x + entity.width / 2;
-    const cy = entity.y + entity.height / 2;
-    return cx >= this.x && cx <= this.x + this.viewportWidth &&
-           cy >= this.y && cy <= this.y + this.viewportHeight;
-  }
-}
-</file>
-
-<file path="js/rendering/Renderer.js">
-import { GAME_CONFIG } from "../config/game.config.js";
-
-export class Renderer {
-  /**
-   * @param {HTMLCanvasElement} canvas
-   * @param {import("./Camera.js").Camera} camera
-   * @param {import("../managers/ResourceManager.js").ResourceManager} [resourceManager]
-   */
-  constructor(canvas, camera, resourceManager = null) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext("2d");
-    this.camera = camera;
-    this.resourceManager = resourceManager;
-    this.physicalScale = 1;
-    this.visibleWorldWidth = 1280;
-    this.visibleWorldHeight = 720;
-    this.dpr = 1;
-  }
-
-  resize() {
-    const dpr = window.devicePixelRatio || 1;
-    this.dpr = dpr;
-    const cssW = this.canvas.clientWidth || window.innerWidth;
-    const cssH = this.canvas.clientHeight || window.innerHeight;
-    const W = Math.max(1, Math.round(cssW * dpr));
-    const H = Math.max(1, Math.round(cssH * dpr));
-    if (this.canvas.width !== W) this.canvas.width = W;
-    if (this.canvas.height !== H) this.canvas.height = H;
-    this.physicalScale = H / GAME_CONFIG.viewport.referenceHeight;
-    this.visibleWorldWidth = W / this.physicalScale;
-    this.visibleWorldHeight = H / this.physicalScale;
-    this.camera.setViewport(this.visibleWorldWidth, this.visibleWorldHeight);
-  }
-
-  beginFrame() {
-    const ctx = this.ctx;
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.fillStyle = "#1a1a2e";
-    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    const s = this.physicalScale;
-    ctx.setTransform(s, 0, 0, s, -this.camera.x * s, -this.camera.y * s);
-  }
-
-  endFrame() {
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-  }
-
-  drawBackground(level) {
-    const ctx = this.ctx;
-    const camX = this.camera.x;
-    const camY = this.camera.y;
-    const vw = this.visibleWorldWidth;
-    const vh = this.visibleWorldHeight;
-    const grad = ctx.createLinearGradient(0, camY, 0, camY + vh);
-    grad.addColorStop(0, "#3a6ea5");
-    grad.addColorStop(1, "#88b0d0");
-    ctx.fillStyle = grad;
-    ctx.fillRect(camX, camY, vw, vh);
-    ctx.fillStyle = "#2c4d66";
-    const baseY = camY + vh - 80;
-    const step = 240;
-    const startX = Math.floor(camX / step) * step - step;
-    for (let x = startX; x < camX + vw + step; x += step) {
-      ctx.beginPath();
-      ctx.moveTo(x, baseY + 80);
-      ctx.lineTo(x + step / 2, baseY - 60);
-      ctx.lineTo(x + step, baseY + 80);
-      ctx.closePath();
-      ctx.fill();
-    }
-  }
-
-  drawPlatforms(level) {
-    const ctx = this.ctx;
-    for (const p of level.platforms) {
-      if (p.type === "solid") {
-        ctx.fillStyle = "#5a4632";
-        ctx.fillRect(p.x, p.y, p.width, p.height);
-        ctx.fillStyle = "#7d6247";
-        ctx.fillRect(p.x, p.y, p.width, Math.min(8, p.height));
-      } else {
-        ctx.fillStyle = "#8a6a44";
-        ctx.fillRect(p.x, p.y, p.width, p.height);
-        ctx.fillStyle = "#c39a68";
-        ctx.fillRect(p.x, p.y, p.width, Math.min(4, p.height));
-      }
-    }
-  }
-
-  drawObstacles(level) {
-    if (!level.obstacles) return;
-    const ctx = this.ctx;
-    for (const o of level.obstacles) {
-      ctx.fillStyle = "#4d3b2a";
-      ctx.fillRect(o.x, o.y, o.width, o.height);
-      ctx.strokeStyle = "#2c2117";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(o.x + 1, o.y + 1, o.width - 2, o.height - 2);
-    }
-  }
-
-  drawHazards(level) {
-    if (!level.hazards) return;
-    const ctx = this.ctx;
-    for (const h of level.hazards) {
-      const img = h.texture && this.resourceManager
-        ? this.resourceManager.getImage(h.texture)
-        : null;
-      if (img) {
-        ctx.drawImage(img, h.x, h.y, h.width, h.height);
-        continue;
-      }
-      // Fallback
-      ctx.fillStyle = "#c0392b";
-      ctx.fillRect(h.x, h.y, h.width, h.height);
-      ctx.fillStyle = "#e74c3c";
-      const teeth = Math.floor(h.width / 12);
-      for (let i = 0; i < teeth; i++) {
-        ctx.beginPath();
-        ctx.moveTo(h.x + i * 12, h.y);
-        ctx.lineTo(h.x + i * 12 + 6, h.y - 6);
-        ctx.lineTo(h.x + i * 12 + 12, h.y);
-        ctx.closePath();
-        ctx.fill();
-      }
-    }
-  }
-
-  drawExit(level, debug = false) {
-    if (!debug) return; // Exit невидим в обычном режиме
-    const ctx = this.ctx;
-    const e = level.exit;
-    if (!e) return;
-    ctx.strokeStyle = "#00ff00";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(e.x, e.y, e.width, e.height);
-  }
-
-  drawEntities(entities) {
-    for (const e of entities) {
-      if (!e.alive) continue;
-      e.render(this.ctx);
-    }
-    for (const e of entities) {
-      if (!e.alive) continue;
-      if (typeof e.renderNickname === "function") e.renderNickname(this.ctx);
-    }
-  }
-
-  drawWorldBounds(level) {
-    const ctx = this.ctx;
-    ctx.strokeStyle = "rgba(255,255,255,0.15)";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(0, 0, level.world.width, level.world.height);
-  }
-
-  drawDebug(camera, entities, level) {
-    const ctx = this.ctx;
-    ctx.strokeStyle = "#00ff00";
-    ctx.lineWidth = 1;
-    for (const e of entities) {
-      if (!e.alive) continue;
-      ctx.strokeRect(e.x, e.y, e.width, e.height);
-    }
-    ctx.strokeStyle = "#ff00ff";
-    ctx.strokeRect(camera.x, camera.y, camera.viewportWidth, camera.viewportHeight);
-  }
-}
-</file>
-
 <file path="js/utils/aabb.js">
 export function intersects(a, b) {
   return a.x < b.x + b.width &&
@@ -2277,77 +1960,51 @@ export const BOSS_CONFIG = {
 };
 </file>
 
-<file path="js/config/enemies.config.js">
-export const ENEMY_BASE_CONFIG = {
-  size: { width: 64, height: 96 },
-  health: { max: 1 },
-  damage: { contact: 0.5 },
-  movement: { speed: 100 },
-  visibilitySoundDelayMs: 1000
-};
-
-export const ENEMY_TYPE_1_CONFIG = {
-  type: "enemy-1",
-  nickname: "Максимка",
-  appearance: {
-    headTexture: "./assets/images/enemies/type-1/head.webp",
-    bodyTexture: "./assets/images/enemies/type-1/body.png"
+<file path="js/config/game.config.js">
+export const GAME_CONFIG = {
+  physics: {
+    gravity: 2000,
+    maxFallSpeed: 1200,
+    fixedTimeStep: 1 / 60,
+    maxFrameDeltaMs: 250
   },
-  audio: {
-    damage: "./assets/audio/enemies/type-1/damage.mp3",
-    extra: { firstVisible: "./assets/audio/enemies/type-1/visible.mp3" }
-  }
-};
-
-export const ENEMY_TYPE_2_CONFIG = {
-  type: "enemy-2",
-  nickname: "Богданчик",
-  appearance: {
-    headTexture: "./assets/images/enemies/type-2/head.webp",
-    bodyTexture: "./assets/images/enemies/type-2/body.png"
+  viewport: {
+    referenceHeight: 720,
+    /** Общий zoom игрового мира. 1.0 = без изменений, >1 = крупнее. */
+    zoom: 1.1
   },
-  audio: {
-    damage: "./assets/audio/enemies/type-2/damage.mp3",
-    extra: { firstVisible: "./assets/audio/enemies/type-2/visible.mp3" }
-  }
-};
-
-export const ENEMY_TYPE_3_CONFIG = {
-  type: "enemy-3",
-  nickname: "Деревянко",
-  appearance: {
-    headTexture: "./assets/images/enemies/type-3/head.webp",
-    bodyTexture: "./assets/images/enemies/type-3/body.png"
+  camera: {
+    /**
+     * Доля высоты viewport, на которой удерживается центр цели.
+     * 0.5 — центр экрана, <0.5 — цель выше (камера визуально ниже, меньше пустоты сверху).
+     */
+    verticalAnchor: 0.45
   },
-  audio: {
-    damage: "./assets/audio/enemies/type-3/damage.mp3",
-    extra: { firstVisible: "./assets/audio/enemies/type-3/visible.mp3" }
-  }
-};
-</file>
-
-<file path="js/config/player.config.js">
-export const PLAYER_CONFIG = {
-  id: "player",
-  nickname: "Мария",
-  appearance: {
-    headTexture: "./assets/images/player/head.webp",
-    bodyTexture: "./assets/images/player/body.png"
+  visuals: {
+    /** Визуальный overlap головы поверх тела (доля от bodyH). */
+    headBodyOverlap: 0.15,
+    /** Затемнение фонового слоя во время салютов (0..1). */
+    finaleBackgroundDim: 0.5
   },
-  audio: {
-    damage: "./assets/audio/player/damage.mp3",
-    extra: {
-      levelEntered: "./assets/audio/player/level-enter.mp3"
-    }
+  damage: {
+    enemy: 0.5,
+    hazard: 0.5,
+    bossContact: 2,
+    bossProjectile: 1
   },
-  size: { width: 64, height: 96 },
-  movement: {
-    speed: 240,
-    jumpVelocity: -760,
-    stompBounceVelocity: -420
+  player: {
+    maxHealth: 3,
+    invulnerabilityMs: 1000
   },
-  health: { max: 3, invulnerabilityMs: 1000 },
-  damageAnimation: { durationMs: 500, visibilitySwitches: 5 }
+  nickname: {
+    maxLength: 24,
+    offsetY: 12
+  },
+  debug: {
+    enabled: false
+  },
+  stompTolerance: 8,
+  dropThroughDurationMs: 200
 };
 </file>
 
@@ -2361,343 +2018,108 @@ export const TRAP_DEFAULT_CONFIG = {
 };
 </file>
 
-<file path="js/core/Game.js">
-import { GameLoop } from "./GameLoop.js";
-import { GameState } from "./GameState.js";
-import { EventBus, GameEvents } from "./EventBus.js";
-import { TimerManager } from "./TimerManager.js";
-import { InputManager, Actions } from "../managers/InputManager.js";
-import { EntityManager } from "../managers/EntityManager.js";
-import { CollisionManager } from "../managers/CollisionManager.js";
-import { LevelManager } from "../managers/LevelManager.js";
-import { ResourceManager } from "../managers/ResourceManager.js";
-import { AudioManager } from "../managers/AudioManager.js";
-import { HUDManager } from "../managers/HUDManager.js";
-import { StorageManager } from "../managers/StorageManager.js";
-import { DebugManager } from "../managers/DebugManager.js";
-import { LevelIntroController } from "../managers/LevelIntroController.js";
-import { FinaleController } from "../managers/FinaleController.js";
-import { Renderer } from "../rendering/Renderer.js";
-import { Camera } from "../rendering/Camera.js";
+<file path="js/entities/Character.js">
+import { Entity } from "./Entity.js";
 import { GAME_CONFIG } from "../config/game.config.js";
-import { Logger } from "../utils/Logger.js";
+import { truncateNickname } from "../utils/text.js";
 
-export class Game {
-  /**
-   * @param {HTMLCanvasElement} canvas
-   */
-  constructor(canvas) {
-    this.canvas = canvas;
-    this.eventBus = new EventBus();
-    this.storage = new StorageManager();
-    this.resourceManager = new ResourceManager(this.eventBus);
-    this.audioManager = new AudioManager(this.resourceManager);
-    this.inputManager = new InputManager();
-    this.timerManager = new TimerManager();
-    this.camera = new Camera();
-    this.renderer = new Renderer(canvas, this.camera, this.resourceManager);
-    this.entityManager = new EntityManager();
-    this.collisionManager = new CollisionManager(this.eventBus);
-    this.debugManager = new DebugManager();
-
-    this.state = GameState.LOADING;
-    this.player = null;
-    this.levelManager = new LevelManager(this);
-
-    this.gameLoop = new GameLoop(
-      (dt) => this.update(dt),
-      (alpha) => this.render(alpha),
-      GAME_CONFIG.physics.fixedTimeStep,
-      GAME_CONFIG.physics.maxFrameDeltaMs
-    );
-
-    this.hudManager = new HUDManager(document.body, this.eventBus, this.inputManager);
-    this.levelIntro = new LevelIntroController(this.timerManager);
-    this.finaleController = new FinaleController(this);
-
-    this._audioUnlockRequested = false;
-    this._restartHandler = this._restartHandler.bind(this);
-    this._onVisibilityChange = this._onVisibilityChange.bind(this);
-    this._onResize = this._onResize.bind(this);
-    this._onUserGesture = this._onUserGesture.bind(this);
-    this._previousStateBeforeHide = null;
+export class Character extends Entity {
+  constructor(config = {}) {
+    super(config);
+    this.nickname = config.nickname || "";
+    this.appearance = config.appearance || {};
+    this.size = config.size || { width: 64, height: 96 };
+    this.width = this.size.width;
+    this.height = this.size.height;
+    this.maxHealth = (config.health && config.health.max) || 1;
+    this.health = this.maxHealth;
+    this.audio = config.audio || {};
+    this.resourceManager = null;
+    this.visibilityScheduled = false;
+    this.visibilityTimerId = 0;
+    this.visibilitySoundDelayMs = config.visibilitySoundDelayMs ?? 1000;
+    /** Визуальное направление взгляда: -1 влево, +1 вправо. Hitbox не меняется. */
+    this.facing = config.facing === -1 ? -1 : 1;
   }
 
-  async init() {
-    Logger.info("Game init");
-    this.inputManager.attach(window);
-    window.addEventListener("resize", this._onResize);
-    document.addEventListener("visibilitychange", this._onVisibilityChange);
-    window.addEventListener("keydown", this._onUserGesture, { once: false });
-    window.addEventListener("pointerdown", this._onUserGesture, { once: false });
+  setResourceManager(rm) { this.resourceManager = rm; }
 
-    this.eventBus.on("RESTART_REQUESTED", this._restartHandler);
-
-    this._onResize();
-    this.hudManager.showAudioUnlock();
-
-    const stored = this.storage.load();
-    const startLevel = stored ? stored.lastReachedLevel : 1;
-
-    this.setState(GameState.LOADING);
-    await this.levelManager.load(startLevel, { resetHealth: true, isRestart: false });
-    this.player = this.levelManager.player;
-
-    this.eventBus.on(GameEvents.PLAYER_HEALTH_CHANGED, (p) => {
-      this.hudManager.updateHealth(p.health);
-    });
-    this.eventBus.on(GameEvents.PLAYER_DIED, () => {
-      this.setState(GameState.GAME_OVER);
-    });
-    this.eventBus.on(GameEvents.BOSS_DEFEATED, () => {
-      this._startFinale();
-    });
-
-    this.hudManager.updateHealth(this.player.health);
-
-    this.setState(GameState.PLAYING);
-    this.levelIntro.show(this.levelManager.currentLevelId);
-    this.gameLoop.start();
-    Logger.info("Game started");
+  getNicknameDisplay() {
+    if (!this.nickname) return "";
+    return truncateNickname(this.nickname, GAME_CONFIG.nickname.maxLength);
   }
 
-  setState(state) {
-    if (this.state === state) return;
-    const prev = this.state;
-    this.state = state;
-    this.eventBus.emit(GameEvents.GAME_STATE_CHANGED, { state, previous: prev });
-    Logger.info(`State: ${prev} -> ${state}`);
-  }
-
-  update(dt) {
-    if (this.state === GameState.PLAYING) {
-      this._updatePlaying(dt);
-    } else if (this.state === GameState.PAUSED) {
-      // nothing
-    } else if (this.state === GameState.GAME_OVER) {
-      if (this.inputManager.wasPressed(Actions.RESTART)) {
-        this._restartHandler();
-      }
-    } else if (this.state === GameState.FINALE) {
-      this._updateFinale(dt);
-    }
-    if (this.state === GameState.PLAYING) {
-      this.timerManager.update(dt * 1000);
-    }
-    this.inputManager.endFrame();
-  }
-
-  _updatePlaying(dt) {
-    const input = this.inputManager;
-    const level = this.levelManager.currentLevel;
-    if (!level) return;
-
-    for (const e of this.entityManager.entities) {
-      e.prevX = e.x;
-      e.prevY = e.y;
-    }
-
-    if (this.player && this.player.alive) {
-      this.player.update(dt, input, this.eventBus);
-    }
-
-    const ctx = {
-      camera: this.camera,
-      entities: this.entityManager.entities,
-      audioManager: this.audioManager,
-      eventBus: this.eventBus
-    };
-
-    for (const e of this.entityManager.entities) {
-      if (!e.alive) continue;
-      if (e.type === "enemy-1" || e.type === "enemy-2" || e.type === "enemy-3") {
-        e.update(dt, this.camera);
-      } else if (e.isFriend) {
-        e.update(dt, ctx);
-      } else if (e.type === "boss") {
-        e.update(dt, this.camera, this.player, this.entityManager, this.audioManager, this.eventBus);
-      } else if (e.type === "projectile") {
-        e.update(dt, this.camera);
-      }
-    }
-
-    for (const trap of this.levelManager.traps) {
-      trap.update(dt, this.player);
-    }
-
-    for (const e of this.entityManager.entities) {
-      if (!e.alive) continue;
-      if (e.applyGravity || e.type === "projectile") {
-        this.collisionManager.moveEntity(e, dt, level);
-      }
-    }
-
-    this._updateVisibilityEvents();
-
-    const enemies = this.entityManager.entities.filter(e =>
-      e.alive && (e.type === "enemy-1" || e.type === "enemy-2" || e.type === "enemy-3"));
-    const friends = this.entityManager.entities.filter(e => e.alive && e.isFriend);
-    const projectiles = this.entityManager.entities.filter(e => e.alive && e.type === "projectile");
-    const boss = this.entityManager.entities.find(e => e.alive && e.type === "boss") || null;
-
-    const result = this.collisionManager.resolveEntityInteractions({
-      player: this.player,
-      enemies,
-      friends,
-      boss,
-      projectiles,
-      level,
-      audioManager: this.audioManager,
-      eventBus: this.eventBus
-    });
-
-    if (result.damageCandidates.length > 0 && this.player && this.player.alive) {
-      const maxDmg = Math.max(...result.damageCandidates);
-      const applied = this.player.applyDamage(maxDmg, this.eventBus);
-      if (applied && this.player.audio && this.player.audio.damage) {
-        this.audioManager.play(this.player.audio.damage);
-      }
-    }
-
-    if (result.levelComplete && this.state === GameState.PLAYING) {
-      this._handleLevelComplete();
+  _drawTexture(ctx, key, rect) {
+    const path = this.appearance[key + "Texture"];
+    const img = path && this.resourceManager ? this.resourceManager.getImage(path) : null;
+    if (img) {
+      ctx.drawImage(img, rect.x, rect.y, rect.width, rect.height);
       return;
     }
-
-    if (this.player) this.camera.follow(this.player);
-
-    this.entityManager.flushRemovals();
-
-    this.debugManager.update(dt * 1000);
+    ctx.fillStyle = key === "head" ? "#c08040" : "#4060c0";
+    ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(rect.x + 1, rect.y + 1, rect.width - 2, rect.height - 2);
   }
 
-  _updateFinale(dt) {
-    this.finaleController.update(dt);
-    this.entityManager.flushRemovals();
-    this.debugManager.update(dt * 1000);
-  }
+  /**
+   * Голова визуально перекрывает верх тела на `headBodyOverlap` от bodyH.
+   * Внешние границы (this.y .. this.y + this.height) и hitbox НЕ меняются.
+   * Body рисуется первым, head — поверх, чтобы overlap отображался как голова сверху.
+   */
+  render(ctx) {
+    const headH = (this.appearance.head && this.appearance.head.height) || Math.round(this.height * 0.4);
+    const bodyH = this.height - headH;
+    const overlap = Math.round(bodyH * GAME_CONFIG.visuals.headBodyOverlap);
 
-  _startFinale() {
-    if (this.state === GameState.FINALE) return;
-
-    // 1. Зачистка боя: обычные enemies + hostile projectiles.
-    for (const e of this.entityManager.entities) {
-      if (!e.alive) continue;
-      if (e.type === "enemy-1" || e.type === "enemy-2" || e.type === "enemy-3" ||
-          e.type === "projectile") {
-        e.alive = false;
-      }
-    }
-    this.entityManager.flushRemovals();
-
-    // 2. Ловушки больше не наносят damage.
-    for (const trap of this.levelManager.traps) {
-      if (typeof trap.disable === "function") trap.disable();
+    const flip = this.facing < 0;
+    if (flip) {
+      ctx.save();
+      const cx = this.x + this.width / 2;
+      ctx.translate(cx, 0);
+      ctx.scale(-1, 1);
+      ctx.translate(-cx, 0);
     }
 
-    // 3. Boss уже dead (Boss.takeDamage проставил alive=false до эмита события).
+    // Body слегка выше — перекрывается головой сверху.
+    this._drawTexture(ctx, "body", {
+      x: this.x,
+      y: this.y + headH - overlap,
+      width: this.width,
+      height: bodyH + overlap
+    });
+    // Head поверх — накрывает верхнюю часть body.
+    this._drawTexture(ctx, "head", {
+      x: this.x,
+      y: this.y,
+      width: this.width,
+      height: headH
+    });
 
-    this.setState(GameState.FINALE);
-    this.finaleController.start();
+    if (flip) ctx.restore();
   }
 
-  _updateVisibilityEvents() {
-    for (const e of this.entityManager.entities) {
-      if (!e.alive) continue;
-      if (e.type === "player") continue;
-      if (e.isFriend) continue; // Friend играет spawn-звук самостоятельно
-      if (!e.firstVisibleScheduled) e.firstVisibleScheduled = false;
-      if (e.visibilityScheduled) continue;
-      if (!this.camera.isCenterVisible(e)) continue;
-      e.visibilityScheduled = true;
-      const delay = e.visibilitySoundDelayMs ?? 1000;
-      const id = this.timerManager.schedule(() => {
-        if (e.alive && this.camera.isCenterVisible(e)) {
-          const path = e.audio && e.audio.extra && e.audio.extra.firstVisible;
-          if (path) this.audioManager.play(path);
-          this.eventBus.emit(GameEvents.ENTITY_FIRST_VISIBLE, { entity: e });
-        }
-      }, delay, `entity:${e.id}`);
-      e.visibilityTimerId = id;
-    }
+  renderNickname(ctx) {
+    const text = this.getNicknameDisplay();
+    if (!text) return;
+    ctx.save();
+    ctx.font = '12px "Press Start 2P", "Courier New", monospace';
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#000";
+    ctx.fillStyle = "#fff";
+    const cx = this.x + this.width / 2;
+    const ty = this.y - GAME_CONFIG.nickname.offsetY;
+    ctx.strokeText(text, cx, ty);
+    ctx.fillText(text, cx, ty);
+    ctx.restore();
   }
 
-  async _handleLevelComplete() {
-    Logger.info("Level complete");
-    await this.levelManager.completeLevel();
-    this.player = this.levelManager.player;
-    if (this.player) this.hudManager.updateHealth(this.player.health);
-    if (this.state === GameState.PLAYING) {
-      this.levelIntro.show(this.levelManager.currentLevelId);
-    }
-  }
-
-  async _restartHandler() {
-    await this.levelManager.restart();
-    this.player = this.levelManager.player;
-    if (this.player) {
-      this.hudManager.updateHealth(this.player.health);
-      this.setState(GameState.PLAYING);
-      this.gameLoop.clearAccumulator();
-    }
-  }
-
-  render(alpha) {
-    this.renderer.resize();
-    this.renderer.beginFrame();
-    const level = this.levelManager.currentLevel;
-    if (level) {
-      this.renderer.drawBackground(level);
-      if (this.state === GameState.FINALE) {
-        this.finaleController.renderFireworks(this.renderer.ctx);
-      }
-      this.renderer.drawPlatforms(level);
-      this.renderer.drawObstacles(level);
-      this.renderer.drawHazards(level);
-      this.renderer.drawExit(level, this.debugManager.enabled);
-      for (const trap of this.levelManager.traps) {
-        trap.render(this.renderer.ctx, this.debugManager.enabled);
-      }
-      this.renderer.drawWorldBounds(level);
-      this.renderer.drawEntities(this.entityManager.entities);
-      if (this.debugManager.enabled) {
-        this.renderer.drawDebug(this.camera, this.entityManager.entities, level);
-      }
-    }
-    this.renderer.endFrame();
-
-    if (this.debugManager.enabled) {
-      this.hudManager.setDebugVisible(true);
-      this.hudManager.setDebugText(this.debugManager.formatText(this));
-    } else {
-      this.hudManager.setDebugVisible(false);
-    }
-  }
-
-  _onResize() {
-    this.renderer.resize();
-  }
-
-  _onVisibilityChange() {
-    if (document.visibilityState === "hidden") {
-      if (this.state === GameState.PLAYING || this.state === GameState.FINALE) {
-        this._previousStateBeforeHide = this.state;
-        this.setState(GameState.PAUSED);
-      }
-    } else {
-      if (this.state === GameState.PAUSED && this._previousStateBeforeHide) {
-        this.gameLoop.clearAccumulator();
-        this.setState(this._previousStateBeforeHide);
-      }
-      this._previousStateBeforeHide = null;
-    }
-  }
-
-  _onUserGesture() {
-    if (this._audioUnlockRequested) return;
-    this._audioUnlockRequested = true;
-    this.audioManager.markUnlocked();
-    this.hudManager.hideAudioUnlock();
+  takeDamage(amount) {
+    this.health = Math.max(0, this.health - amount);
+    if (this.health <= 0) this.alive = false;
   }
 }
 </file>
@@ -3004,98 +2426,6 @@ export class Trap {
     }
   }
 }
-</file>
-
-<file path="js/levels/level-2.config.js">
-export const LEVEL_2 = {
-  id: 2,
-  music: "./assets/audio/music/level-2.mp3",
-  world: { width: 3800, height: 720 },
-  playerSpawn: { x: 120, y: 500 },
-  platforms: [
-    { id: "ground", type: "solid", x: 0, y: 640, width: 3800, height: 80 },
-    { id: "p1", type: "oneWay", x: 340, y: 500, width: 200, height: 24 },
-    { id: "p2", type: "oneWay", x: 660, y: 400, width: 200, height: 24 },
-    { id: "p3", type: "oneWay", x: 1000, y: 480, width: 220, height: 24 },
-    { id: "p4", type: "oneWay", x: 1380, y: 420, width: 200, height: 24 },
-    { id: "p5", type: "oneWay", x: 1720, y: 500, width: 220, height: 24 },
-    { id: "p6", type: "oneWay", x: 2080, y: 420, width: 220, height: 24 },
-    { id: "p7", type: "oneWay", x: 2500, y: 500, width: 220, height: 24 },
-    { id: "p8", type: "oneWay", x: 2950, y: 460, width: 220, height: 24 }
-  ],
-  obstacles: [
-    { id: "o1", x: 560, y: 560, width: 40, height: 80 },
-    { id: "o2", x: 1200, y: 520, width: 40, height: 120 },
-    { id: "o3", x: 1900, y: 560, width: 40, height: 80 },
-    { id: "o4", x: 2700, y: 520, width: 40, height: 120 },
-    { id: "o5", x: 3300, y: 560, width: 40, height: 80 }
-  ],
-  hazards: [
-    { id: "h1", x: 900, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
-    { id: "h2", x: 1600, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
-    { id: "h3", x: 2350, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
-    { id: "h4", x: 3050, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" }
-  ],
-  enemies: [
-    { id: "e2-1", type: "enemy1", spawn: { x: 800, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 800, y: 544 }, { x: 1150, y: 544 }] } },
-    { id: "e2-2", type: "enemy2", spawn: { x: 1450, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 1450, y: 544 }, { x: 1800, y: 544 }] } },
-    { id: "e2-3", type: "enemy3", spawn: { x: 2150, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2150, y: 544 }, { x: 2450, y: 544 }] } },
-    { id: "e2-4", type: "enemy1", spawn: { x: 2850, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2850, y: 544 }, { x: 3250, y: 544 }] } }
-  ],
-  exit: { x: 3660, y: 0, width: 80, height: 720 }
-};
-</file>
-
-<file path="js/levels/level-4.config.js">
-export const LEVEL_4 = {
-  id: 4,
-  music: "./assets/audio/music/level-4.mp3",
-  world: { width: 5000, height: 720 },
-  playerSpawn: { x: 120, y: 500 },
-  platforms: [
-    { id: "ground", type: "solid", x: 0, y: 640, width: 5000, height: 80 },
-    { id: "p1", type: "oneWay", x: 320, y: 500, width: 180, height: 24 },
-    { id: "p2", type: "oneWay", x: 600, y: 400, width: 180, height: 24 },
-    { id: "p3", type: "oneWay", x: 920, y: 480, width: 200, height: 24 },
-    { id: "p4", type: "oneWay", x: 1260, y: 400, width: 200, height: 24 },
-    { id: "p5", type: "oneWay", x: 1620, y: 500, width: 200, height: 24 },
-    { id: "p6", type: "oneWay", x: 1980, y: 400, width: 200, height: 24 },
-    { id: "p7", type: "oneWay", x: 2360, y: 480, width: 200, height: 24 },
-    { id: "p8", type: "oneWay", x: 2740, y: 420, width: 200, height: 24 },
-    { id: "p9", type: "oneWay", x: 3140, y: 500, width: 200, height: 24 },
-    { id: "p10", type: "oneWay", x: 3540, y: 400, width: 200, height: 24 },
-    { id: "p11", type: "oneWay", x: 3960, y: 480, width: 200, height: 24 },
-    { id: "p12", type: "oneWay", x: 4380, y: 420, width: 200, height: 24 }
-  ],
-  obstacles: [
-    { id: "o1", x: 500, y: 560, width: 40, height: 80 },
-    { id: "o2", x: 1050, y: 520, width: 40, height: 120 },
-    { id: "o3", x: 1550, y: 560, width: 40, height: 80 },
-    { id: "o4", x: 2100, y: 520, width: 40, height: 120 },
-    { id: "o5", x: 2650, y: 560, width: 40, height: 80 },
-    { id: "o6", x: 3300, y: 520, width: 40, height: 120 },
-    { id: "o7", x: 3900, y: 560, width: 40, height: 80 },
-    { id: "o8", x: 4500, y: 520, width: 40, height: 120 }
-  ],
-  hazards: [
-    { id: "h1", x: 820, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
-    { id: "h2", x: 1380, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
-    { id: "h3", x: 1900, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
-    { id: "h4", x: 2450, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
-    { id: "h5", x: 3050, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
-    { id: "h6", x: 3650, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
-    { id: "h7", x: 4250, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" }
-  ],
-  enemies: [
-    { id: "e4-1", type: "enemy1", spawn: { x: 700, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 700, y: 544 }, { x: 980, y: 544 }] } },
-    { id: "e4-2", type: "enemy2", spawn: { x: 1250, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 1250, y: 544 }, { x: 1520, y: 544 }] } },
-    { id: "e4-3", type: "enemy3", spawn: { x: 1800, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 1800, y: 544 }, { x: 2080, y: 544 }] } },
-    { id: "e4-4", type: "enemy1", spawn: { x: 2350, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2350, y: 544 }, { x: 2640, y: 544 }] } },
-    { id: "e4-5", type: "enemy2", spawn: { x: 2950, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2950, y: 544 }, { x: 3250, y: 544 }] } },
-    { id: "e4-6", type: "enemy3", spawn: { x: 3550, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 3550, y: 544 }, { x: 3850, y: 544 }] } }
-  ],
-  exit: { x: 4860, y: 0, width: 80, height: 720 }
-};
 </file>
 
 <file path="js/managers/CollisionManager.js">
@@ -3497,6 +2827,52 @@ export class ResourceManager {
 }
 </file>
 
+<file path="js/rendering/Camera.js">
+import { GAME_CONFIG } from "../config/game.config.js";
+
+export class Camera {
+  constructor() {
+    this.x = 0;
+    this.y = 0;
+    this.viewportWidth = 1280;
+    this.viewportHeight = 720;
+    this.worldWidth = 3200;
+    this.worldHeight = 720;
+    this.verticalAnchor = GAME_CONFIG.camera.verticalAnchor;
+  }
+
+  setViewport(w, h) { this.viewportWidth = w; this.viewportHeight = h; }
+  setWorldBounds(w, h) { this.worldWidth = w; this.worldHeight = h; }
+
+  follow(target) {
+    const tcx = target.x + target.width / 2;
+    const tcy = target.y + target.height / 2;
+    let cx = tcx - this.viewportWidth / 2;
+    let cy = tcy - this.viewportHeight * this.verticalAnchor;
+    const maxX = Math.max(0, this.worldWidth - this.viewportWidth);
+    const maxY = Math.max(0, this.worldHeight - this.viewportHeight);
+    if (cx < 0) cx = 0; else if (cx > maxX) cx = maxX;
+    if (cy < 0) cy = 0; else if (cy > maxY) cy = maxY;
+    this.x = cx;
+    this.y = cy;
+  }
+
+  isVisible(rect) {
+    return rect.x + rect.width > this.x &&
+           rect.x < this.x + this.viewportWidth &&
+           rect.y + rect.height > this.y &&
+           rect.y < this.y + this.viewportHeight;
+  }
+
+  isCenterVisible(entity) {
+    const cx = entity.x + entity.width / 2;
+    const cy = entity.y + entity.height / 2;
+    return cx >= this.x && cx <= this.x + this.viewportWidth &&
+           cy >= this.y && cy <= this.y + this.viewportHeight;
+  }
+}
+</file>
+
 <file path="js/rendering/FireworksSystem.js">
 import { FINALE_CONFIG } from "../config/finale.config.js";
 
@@ -3675,6 +3051,295 @@ export class FireworksSystem {
 }
 </file>
 
+<file path="js/rendering/Renderer.js">
+import { GAME_CONFIG } from "../config/game.config.js";
+
+export class Renderer {
+  /**
+   * @param {HTMLCanvasElement} canvas
+   * @param {import("./Camera.js").Camera} camera
+   * @param {import("../managers/ResourceManager.js").ResourceManager} [resourceManager]
+   */
+  constructor(canvas, camera, resourceManager = null) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext("2d");
+    this.camera = camera;
+    this.resourceManager = resourceManager;
+    this.physicalScale = 1;
+    this.visibleWorldWidth = 1280;
+    this.visibleWorldHeight = 720;
+    this.dpr = 1;
+  }
+
+  resize() {
+    const dpr = window.devicePixelRatio || 1;
+    this.dpr = dpr;
+    const cssW = this.canvas.clientWidth || window.innerWidth;
+    const cssH = this.canvas.clientHeight || window.innerHeight;
+    const W = Math.max(1, Math.round(cssW * dpr));
+    const H = Math.max(1, Math.round(cssH * dpr));
+    if (this.canvas.width !== W) this.canvas.width = W;
+    if (this.canvas.height !== H) this.canvas.height = H;
+    const zoom = GAME_CONFIG.viewport.zoom || 1;
+    this.physicalScale = (H / GAME_CONFIG.viewport.referenceHeight) * zoom;
+    this.visibleWorldWidth = W / this.physicalScale;
+    this.visibleWorldHeight = H / this.physicalScale;
+    this.camera.setViewport(this.visibleWorldWidth, this.visibleWorldHeight);
+  }
+
+  beginFrame() {
+    const ctx = this.ctx;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = "#1a1a2e";
+    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    const s = this.physicalScale;
+    ctx.setTransform(s, 0, 0, s, -this.camera.x * s, -this.camera.y * s);
+  }
+
+  endFrame() {
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+
+  /**
+   * Пропорциональный "cover": сохраняет aspect ratio, центрирует, кропает лишнее.
+   * Используется для всех level-текстур (background/ground/platform).
+   */
+  _drawCover(img, dx, dy, dw, dh) {
+    if (!img || !img.width || !img.height || dw <= 0 || dh <= 0) return;
+    const imgRatio = img.width / img.height;
+    const rectRatio = dw / dh;
+    let sx, sy, sw, sh;
+    if (imgRatio > rectRatio) {
+      sh = img.height;
+      sw = sh * rectRatio;
+      sx = (img.width - sw) / 2;
+      sy = 0;
+    } else {
+      sw = img.width;
+      sh = sw / rectRatio;
+      sx = 0;
+      sy = (img.height - sh) / 2;
+    }
+    this.ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+  }
+
+  _getImage(path) {
+    if (!path || !this.resourceManager) return null;
+    return this.resourceManager.getImage(path);
+  }
+
+  drawBackground(level) {
+    const ctx = this.ctx;
+    const camX = this.camera.x;
+    const camY = this.camera.y;
+    const vw = this.visibleWorldWidth;
+    const vh = this.visibleWorldHeight;
+
+    const visuals = level && level.visuals;
+    const bgPath = visuals && visuals.background && visuals.background.texture;
+    const bgImg = this._getImage(bgPath);
+    if (bgImg) {
+      this._drawCover(bgImg, camX, camY, vw, vh);
+      return;
+    }
+
+    // Fallback: gradient sky + distant hills
+    const grad = ctx.createLinearGradient(0, camY, 0, camY + vh);
+    grad.addColorStop(0, "#3a6ea5");
+    grad.addColorStop(1, "#88b0d0");
+    ctx.fillStyle = grad;
+    ctx.fillRect(camX, camY, vw, vh);
+    ctx.fillStyle = "#2c4d66";
+    const baseY = camY + vh - 80;
+    const step = 240;
+    const startX = Math.floor(camX / step) * step - step;
+    for (let x = startX; x < camX + vw + step; x += step) {
+      ctx.beginPath();
+      ctx.moveTo(x, baseY + 80);
+      ctx.lineTo(x + step / 2, baseY - 60);
+      ctx.lineTo(x + step, baseY + 80);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  /**
+   * Полупрозрачное затемнение ТОЛЬКО фонового слоя (viewport-область).
+   * Вызывается между drawBackground и fireworks/platforms.
+   */
+  drawBackgroundDim() {
+    const ctx = this.ctx;
+    const alpha = GAME_CONFIG.visuals.finaleBackgroundDim;
+    ctx.save();
+    ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+    ctx.fillRect(
+      this.camera.x,
+      this.camera.y,
+      this.visibleWorldWidth,
+      this.visibleWorldHeight
+    );
+    ctx.restore();
+  }
+
+  drawPlatforms(level) {
+    const ctx = this.ctx;
+    const visuals = level && level.visuals;
+    const groundImg = this._getImage(visuals && visuals.ground && visuals.ground.texture);
+    const platformImg = this._getImage(visuals && visuals.platform && visuals.platform.texture);
+
+    for (const p of level.platforms) {
+      const isGround = p.type === "solid" && p.id === "ground";
+      const img = isGround ? groundImg : platformImg;
+
+      if (img) {
+        this._drawCover(img, p.x, p.y, p.width, p.height);
+        continue;
+      }
+
+      // Fallback
+      if (p.type === "solid") {
+        ctx.fillStyle = "#5a4632";
+        ctx.fillRect(p.x, p.y, p.width, p.height);
+        ctx.fillStyle = "#7d6247";
+        ctx.fillRect(p.x, p.y, p.width, Math.min(8, p.height));
+      } else {
+        ctx.fillStyle = "#8a6a44";
+        ctx.fillRect(p.x, p.y, p.width, p.height);
+        ctx.fillStyle = "#c39a68";
+        ctx.fillRect(p.x, p.y, p.width, Math.min(4, p.height));
+      }
+    }
+  }
+
+  drawObstacles(level) {
+    if (!level.obstacles) return;
+    const ctx = this.ctx;
+    for (const o of level.obstacles) {
+      ctx.fillStyle = "#4d3b2a";
+      ctx.fillRect(o.x, o.y, o.width, o.height);
+      ctx.strokeStyle = "#2c2117";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(o.x + 1, o.y + 1, o.width - 2, o.height - 2);
+    }
+  }
+
+  drawHazards(level) {
+    if (!level.hazards) return;
+    const ctx = this.ctx;
+    for (const h of level.hazards) {
+      const img = h.texture && this.resourceManager
+        ? this.resourceManager.getImage(h.texture)
+        : null;
+      if (img) {
+        ctx.drawImage(img, h.x, h.y, h.width, h.height);
+        continue;
+      }
+      ctx.fillStyle = "#c0392b";
+      ctx.fillRect(h.x, h.y, h.width, h.height);
+      ctx.fillStyle = "#e74c3c";
+      const teeth = Math.floor(h.width / 12);
+      for (let i = 0; i < teeth; i++) {
+        ctx.beginPath();
+        ctx.moveTo(h.x + i * 12, h.y);
+        ctx.lineTo(h.x + i * 12 + 6, h.y - 6);
+        ctx.lineTo(h.x + i * 12 + 12, h.y);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+  }
+
+  drawExit(level, debug = false) {
+    if (!debug) return;
+    const ctx = this.ctx;
+    const e = level.exit;
+    if (!e) return;
+    ctx.strokeStyle = "#00ff00";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(e.x, e.y, e.width, e.height);
+  }
+
+  drawEntities(entities) {
+    for (const e of entities) {
+      if (!e.alive) continue;
+      e.render(this.ctx);
+    }
+    for (const e of entities) {
+      if (!e.alive) continue;
+      if (typeof e.renderNickname === "function") e.renderNickname(this.ctx);
+    }
+  }
+
+  drawWorldBounds(level) {
+    const ctx = this.ctx;
+    ctx.strokeStyle = "rgba(255,255,255,0.15)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, 0, level.world.width, level.world.height);
+  }
+
+  drawDebug(camera, entities, level) {
+    const ctx = this.ctx;
+    ctx.strokeStyle = "#00ff00";
+    ctx.lineWidth = 1;
+    for (const e of entities) {
+      if (!e.alive) continue;
+      ctx.strokeRect(e.x, e.y, e.width, e.height);
+    }
+    ctx.strokeStyle = "#ff00ff";
+    ctx.strokeRect(camera.x, camera.y, camera.viewportWidth, camera.viewportHeight);
+  }
+}
+</file>
+
+<file path="js/config/enemies.config.js">
+export const ENEMY_BASE_CONFIG = {
+  size: { width: 64, height: 96 },
+  health: { max: 1 },
+  damage: { contact: 0.5 },
+  movement: { speed: 100 },
+  visibilitySoundDelayMs: 1000
+};
+
+export const ENEMY_TYPE_1_CONFIG = {
+  type: "enemy-1",
+  nickname: "Максимка",
+  appearance: {
+    headTexture: "./assets/images/enemies/type-1/head.png",
+    bodyTexture: "./assets/images/enemies/type-1/body.png"
+  },
+  audio: {
+    damage: "./assets/audio/enemies/type-1/damage.mp3",
+    extra: { firstVisible: "./assets/audio/enemies/type-1/visible.mp3" }
+  }
+};
+
+export const ENEMY_TYPE_2_CONFIG = {
+  type: "enemy-2",
+  nickname: "Богданчик",
+  appearance: {
+    headTexture: "./assets/images/enemies/type-2/head.png",
+    bodyTexture: "./assets/images/enemies/type-2/body.png"
+  },
+  audio: {
+    damage: "./assets/audio/enemies/type-2/damage.mp3",
+    extra: { firstVisible: "./assets/audio/enemies/type-2/visible.mp3" }
+  }
+};
+
+export const ENEMY_TYPE_3_CONFIG = {
+  type: "enemy-3",
+  nickname: "Деревянко",
+  appearance: {
+    headTexture: "./assets/images/enemies/type-3/head.png",
+    bodyTexture: "./assets/images/enemies/type-3/body.png"
+  },
+  audio: {
+    damage: "./assets/audio/enemies/type-3/damage.mp3",
+    extra: { firstVisible: "./assets/audio/enemies/type-3/visible.mp3" }
+  }
+};
+</file>
+
 <file path="js/config/finale.config.js">
 export const FINALE_CONFIG = Object.freeze({
   playerMoveSpeed: 300,
@@ -3721,10 +3386,579 @@ export const FINALE_CONFIG = Object.freeze({
 });
 </file>
 
+<file path="js/config/player.config.js">
+export const PLAYER_CONFIG = {
+  id: "player",
+  nickname: "Мария",
+  appearance: {
+    headTexture: "./assets/images/player/head.png",
+    bodyTexture: "./assets/images/player/body.png",
+    finalBodyTexture: "./assets/images/player/body-final.png"
+  },
+  audio: {
+    damage: "./assets/audio/player/damage.mp3",
+    extra: {
+      levelEntered: "./assets/audio/player/level-enter.mp3"
+    }
+  },
+  size: { width: 64, height: 96 },
+  movement: {
+    speed: 240,
+    jumpVelocity: -760,
+    stompBounceVelocity: -420
+  },
+  health: { max: 3, invulnerabilityMs: 1000 },
+  damageAnimation: { durationMs: 500, visibilitySwitches: 5 }
+};
+</file>
+
+<file path="js/core/Game.js">
+import { GameLoop } from "./GameLoop.js";
+import { GameState } from "./GameState.js";
+import { EventBus, GameEvents } from "./EventBus.js";
+import { TimerManager } from "./TimerManager.js";
+import { InputManager, Actions } from "../managers/InputManager.js";
+import { EntityManager } from "../managers/EntityManager.js";
+import { CollisionManager } from "../managers/CollisionManager.js";
+import { LevelManager } from "../managers/LevelManager.js";
+import { ResourceManager } from "../managers/ResourceManager.js";
+import { AudioManager } from "../managers/AudioManager.js";
+import { HUDManager } from "../managers/HUDManager.js";
+import { StorageManager } from "../managers/StorageManager.js";
+import { DebugManager } from "../managers/DebugManager.js";
+import { LevelIntroController } from "../managers/LevelIntroController.js";
+import { FinaleController } from "../managers/FinaleController.js";
+import { Renderer } from "../rendering/Renderer.js";
+import { Camera } from "../rendering/Camera.js";
+import { GAME_CONFIG } from "../config/game.config.js";
+import { Logger } from "../utils/Logger.js";
+
+export class Game {
+  /**
+   * @param {HTMLCanvasElement} canvas
+   */
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.eventBus = new EventBus();
+    this.storage = new StorageManager();
+    this.resourceManager = new ResourceManager(this.eventBus);
+    this.audioManager = new AudioManager(this.resourceManager);
+    this.inputManager = new InputManager();
+    this.timerManager = new TimerManager();
+    this.camera = new Camera();
+    this.renderer = new Renderer(canvas, this.camera, this.resourceManager);
+    this.entityManager = new EntityManager();
+    this.collisionManager = new CollisionManager(this.eventBus);
+    this.debugManager = new DebugManager();
+
+    this.state = GameState.LOADING;
+    this.player = null;
+    this.levelManager = new LevelManager(this);
+
+    this.gameLoop = new GameLoop(
+      (dt) => this.update(dt),
+      (alpha) => this.render(alpha),
+      GAME_CONFIG.physics.fixedTimeStep,
+      GAME_CONFIG.physics.maxFrameDeltaMs
+    );
+
+    this.hudManager = new HUDManager(document.body, this.eventBus, this.inputManager);
+    this.levelIntro = new LevelIntroController(this.timerManager);
+    this.finaleController = new FinaleController(this);
+
+    this._audioUnlockRequested = false;
+    this._restartHandler = this._restartHandler.bind(this);
+    this._onVisibilityChange = this._onVisibilityChange.bind(this);
+    this._onResize = this._onResize.bind(this);
+    this._onUserGesture = this._onUserGesture.bind(this);
+    this._previousStateBeforeHide = null;
+  }
+
+  async init() {
+    Logger.info("Game init");
+    this.inputManager.attach(window);
+    window.addEventListener("resize", this._onResize);
+    document.addEventListener("visibilitychange", this._onVisibilityChange);
+    window.addEventListener("keydown", this._onUserGesture, { once: false });
+    window.addEventListener("pointerdown", this._onUserGesture, { once: false });
+
+    this.eventBus.on("RESTART_REQUESTED", this._restartHandler);
+
+    this._onResize();
+    this.hudManager.showAudioUnlock();
+
+    const stored = this.storage.load();
+    const startLevel = stored ? stored.lastReachedLevel : 1;
+
+    this.setState(GameState.LOADING);
+    await this.levelManager.load(startLevel, { resetHealth: true, isRestart: false });
+    this.player = this.levelManager.player;
+
+    this.eventBus.on(GameEvents.PLAYER_HEALTH_CHANGED, (p) => {
+      this.hudManager.updateHealth(p.health);
+    });
+    this.eventBus.on(GameEvents.PLAYER_DIED, () => {
+      this.setState(GameState.GAME_OVER);
+    });
+    this.eventBus.on(GameEvents.BOSS_DEFEATED, () => {
+      this._startFinale();
+    });
+
+    this.hudManager.updateHealth(this.player.health);
+
+    this.setState(GameState.PLAYING);
+    this.levelIntro.show(this.levelManager.currentLevelId);
+    this.gameLoop.start();
+    Logger.info("Game started");
+  }
+
+  setState(state) {
+    if (this.state === state) return;
+    const prev = this.state;
+    this.state = state;
+    this.eventBus.emit(GameEvents.GAME_STATE_CHANGED, { state, previous: prev });
+    Logger.info(`State: ${prev} -> ${state}`);
+  }
+
+  update(dt) {
+    if (this.state === GameState.PLAYING) {
+      this._updatePlaying(dt);
+    } else if (this.state === GameState.PAUSED) {
+      // nothing
+    } else if (this.state === GameState.GAME_OVER) {
+      if (this.inputManager.wasPressed(Actions.RESTART)) {
+        this._restartHandler();
+      }
+    } else if (this.state === GameState.FINALE) {
+      this._updateFinale(dt);
+    }
+    if (this.state === GameState.PLAYING) {
+      this.timerManager.update(dt * 1000);
+    }
+    this.inputManager.endFrame();
+  }
+
+  _updatePlaying(dt) {
+    const input = this.inputManager;
+    const level = this.levelManager.currentLevel;
+    if (!level) return;
+
+    for (const e of this.entityManager.entities) {
+      e.prevX = e.x;
+      e.prevY = e.y;
+    }
+
+    if (this.player && this.player.alive) {
+      this.player.update(dt, input, this.eventBus);
+    }
+
+    const ctx = {
+      camera: this.camera,
+      entities: this.entityManager.entities,
+      audioManager: this.audioManager,
+      eventBus: this.eventBus
+    };
+
+    for (const e of this.entityManager.entities) {
+      if (!e.alive) continue;
+      if (e.type === "enemy-1" || e.type === "enemy-2" || e.type === "enemy-3") {
+        e.update(dt, this.camera);
+      } else if (e.isFriend) {
+        e.update(dt, ctx);
+      } else if (e.type === "boss") {
+        e.update(dt, this.camera, this.player, this.entityManager, this.audioManager, this.eventBus);
+      } else if (e.type === "projectile") {
+        e.update(dt, this.camera);
+      }
+    }
+
+    for (const trap of this.levelManager.traps) {
+      trap.update(dt, this.player);
+    }
+
+    for (const e of this.entityManager.entities) {
+      if (!e.alive) continue;
+      if (e.applyGravity || e.type === "projectile") {
+        this.collisionManager.moveEntity(e, dt, level);
+      }
+    }
+
+    this._updateVisibilityEvents();
+
+    const enemies = this.entityManager.entities.filter(e =>
+      e.alive && (e.type === "enemy-1" || e.type === "enemy-2" || e.type === "enemy-3"));
+    const friends = this.entityManager.entities.filter(e => e.alive && e.isFriend);
+    const projectiles = this.entityManager.entities.filter(e => e.alive && e.type === "projectile");
+    const boss = this.entityManager.entities.find(e => e.alive && e.type === "boss") || null;
+
+    const result = this.collisionManager.resolveEntityInteractions({
+      player: this.player,
+      enemies,
+      friends,
+      boss,
+      projectiles,
+      level,
+      audioManager: this.audioManager,
+      eventBus: this.eventBus
+    });
+
+    if (result.damageCandidates.length > 0 && this.player && this.player.alive) {
+      const maxDmg = Math.max(...result.damageCandidates);
+      const applied = this.player.applyDamage(maxDmg, this.eventBus);
+      if (applied && this.player.audio && this.player.audio.damage) {
+        this.audioManager.play(this.player.audio.damage);
+      }
+    }
+
+    if (result.levelComplete && this.state === GameState.PLAYING) {
+      this._handleLevelComplete();
+      return;
+    }
+
+    if (this.player) this.camera.follow(this.player);
+
+    this.entityManager.flushRemovals();
+
+    this.debugManager.update(dt * 1000);
+  }
+
+  _updateFinale(dt) {
+    this.finaleController.update(dt);
+    this.entityManager.flushRemovals();
+    this.debugManager.update(dt * 1000);
+  }
+
+  _startFinale() {
+    if (this.state === GameState.FINALE) return;
+
+    // 1. Зачистка боя: обычные enemies + hostile projectiles.
+    for (const e of this.entityManager.entities) {
+      if (!e.alive) continue;
+      if (e.type === "enemy-1" || e.type === "enemy-2" || e.type === "enemy-3" ||
+          e.type === "projectile") {
+        e.alive = false;
+      }
+    }
+    this.entityManager.flushRemovals();
+
+    // 2. Ловушки больше не наносят damage.
+    for (const trap of this.levelManager.traps) {
+      if (typeof trap.disable === "function") trap.disable();
+    }
+
+    // 3. Смена текстуры тела Player на финальную (голова остаётся обычной).
+    if (this.player && this.player.appearance && this.player.appearance.finalBodyTexture) {
+      this.player.appearance.bodyTexture = this.player.appearance.finalBodyTexture;
+    }
+
+    // 4. Boss уже dead (Boss.takeDamage проставил alive=false до эмита события).
+
+    this.setState(GameState.FINALE);
+    this.finaleController.start();
+  }
+
+  _updateVisibilityEvents() {
+    for (const e of this.entityManager.entities) {
+      if (!e.alive) continue;
+      if (e.type === "player") continue;
+      if (e.isFriend) continue;
+      if (!e.firstVisibleScheduled) e.firstVisibleScheduled = false;
+      if (e.visibilityScheduled) continue;
+      if (!this.camera.isCenterVisible(e)) continue;
+      e.visibilityScheduled = true;
+      const delay = e.visibilitySoundDelayMs ?? 1000;
+      const id = this.timerManager.schedule(() => {
+        if (e.alive && this.camera.isCenterVisible(e)) {
+          const path = e.audio && e.audio.extra && e.audio.extra.firstVisible;
+          if (path) this.audioManager.play(path);
+          this.eventBus.emit(GameEvents.ENTITY_FIRST_VISIBLE, { entity: e });
+        }
+      }, delay, `entity:${e.id}`);
+      e.visibilityTimerId = id;
+    }
+  }
+
+  async _handleLevelComplete() {
+    Logger.info("Level complete");
+    await this.levelManager.completeLevel();
+    this.player = this.levelManager.player;
+    if (this.player) this.hudManager.updateHealth(this.player.health);
+    if (this.state === GameState.PLAYING) {
+      this.levelIntro.show(this.levelManager.currentLevelId);
+    }
+  }
+
+  async _restartHandler() {
+    await this.levelManager.restart();
+    this.player = this.levelManager.player;
+    if (this.player) {
+      this.hudManager.updateHealth(this.player.health);
+      this.setState(GameState.PLAYING);
+      this.gameLoop.clearAccumulator();
+    }
+  }
+
+  render(alpha) {
+    this.renderer.resize();
+    this.renderer.beginFrame();
+    const level = this.levelManager.currentLevel;
+    if (level) {
+      this.renderer.drawBackground(level);
+
+      // Затемнение фона — только когда фактически активны салюты.
+      if (this.state === GameState.FINALE && this.finaleController.isFireworksActive()) {
+        this.renderer.drawBackgroundDim();
+      }
+
+      if (this.state === GameState.FINALE) {
+        this.finaleController.renderFireworks(this.renderer.ctx);
+      }
+
+      this.renderer.drawPlatforms(level);
+      this.renderer.drawObstacles(level);
+      this.renderer.drawHazards(level);
+      this.renderer.drawExit(level, this.debugManager.enabled);
+      for (const trap of this.levelManager.traps) {
+        trap.render(this.renderer.ctx, this.debugManager.enabled);
+      }
+      this.renderer.drawWorldBounds(level);
+      this.renderer.drawEntities(this.entityManager.entities);
+      if (this.debugManager.enabled) {
+        this.renderer.drawDebug(this.camera, this.entityManager.entities, level);
+      }
+    }
+    this.renderer.endFrame();
+
+    if (this.debugManager.enabled) {
+      this.hudManager.setDebugVisible(true);
+      this.hudManager.setDebugText(this.debugManager.formatText(this));
+    } else {
+      this.hudManager.setDebugVisible(false);
+    }
+  }
+
+  _onResize() {
+    this.renderer.resize();
+  }
+
+  _onVisibilityChange() {
+    if (document.visibilityState === "hidden") {
+      if (this.state === GameState.PLAYING || this.state === GameState.FINALE) {
+        this._previousStateBeforeHide = this.state;
+        this.setState(GameState.PAUSED);
+      }
+    } else {
+      if (this.state === GameState.PAUSED && this._previousStateBeforeHide) {
+        this.gameLoop.clearAccumulator();
+        this.setState(this._previousStateBeforeHide);
+      }
+      this._previousStateBeforeHide = null;
+    }
+  }
+
+  _onUserGesture() {
+    if (this._audioUnlockRequested) return;
+    this._audioUnlockRequested = true;
+    this.audioManager.markUnlocked();
+    this.hudManager.hideAudioUnlock();
+  }
+}
+</file>
+
+<file path="js/levels/level-2.config.js">
+export const LEVEL_2 = {
+  id: 2,
+  music: "./assets/audio/level-2/Toly Summer - Цените Жизнь.mp3",
+  visuals: {
+    background: { texture: "./assets/images/levels/level-2/background.png" },
+    ground: { texture: "./assets/images/levels/level-2/ground.png" },
+    platform: { texture: "./assets/images/levels/level-2/platform.png" }
+  },
+  world: { width: 3800, height: 720 },
+  playerSpawn: { x: 120, y: 500 },
+  platforms: [
+    { id: "ground", type: "solid", x: 0, y: 640, width: 3800, height: 80 },
+    { id: "p1", type: "oneWay", x: 340, y: 500, width: 200, height: 24 },
+    { id: "p2", type: "oneWay", x: 660, y: 400, width: 200, height: 24 },
+    { id: "p3", type: "oneWay", x: 1000, y: 480, width: 220, height: 24 },
+    { id: "p4", type: "oneWay", x: 1380, y: 420, width: 200, height: 24 },
+    { id: "p5", type: "oneWay", x: 1720, y: 500, width: 220, height: 24 },
+    { id: "p6", type: "oneWay", x: 2080, y: 420, width: 220, height: 24 },
+    { id: "p7", type: "oneWay", x: 2500, y: 500, width: 220, height: 24 },
+    { id: "p8", type: "oneWay", x: 2950, y: 460, width: 220, height: 24 }
+  ],
+  obstacles: [
+    { id: "o1", x: 560, y: 560, width: 40, height: 80 },
+    { id: "o2", x: 1200, y: 520, width: 40, height: 120 },
+    { id: "o3", x: 1900, y: 560, width: 40, height: 80 },
+    { id: "o4", x: 2700, y: 520, width: 40, height: 120 },
+    { id: "o5", x: 3300, y: 560, width: 40, height: 80 }
+  ],
+  hazards: [
+    { id: "h1", x: 900, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h2", x: 1600, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h3", x: 2350, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h4", x: 3050, y: 620, width: 140, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" }
+  ],
+  enemies: [
+    { id: "e2-1", type: "enemy1", spawn: { x: 800, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 800, y: 544 }, { x: 1150, y: 544 }] } },
+    { id: "e2-2", type: "enemy2", spawn: { x: 1450, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 1450, y: 544 }, { x: 1800, y: 544 }] } },
+    { id: "e2-3", type: "enemy3", spawn: { x: 2150, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2150, y: 544 }, { x: 2450, y: 544 }] } },
+    { id: "e2-4", type: "enemy1", spawn: { x: 2850, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2850, y: 544 }, { x: 3250, y: 544 }] } }
+  ],
+  exit: { x: 3660, y: 0, width: 80, height: 720 }
+};
+</file>
+
+<file path="js/levels/level-4.config.js">
+export const LEVEL_4 = {
+  id: 4,
+  music: "./assets/audio/level-4/Light Club - Blizzard.mp3",
+  visuals: {
+    background: { texture: "./assets/images/levels/level-4/background.png" },
+    ground: { texture: "./assets/images/levels/level-4/ground.png" },
+    platform: { texture: "./assets/images/levels/level-4/platform.png" }
+  },
+  world: { width: 5000, height: 720 },
+  playerSpawn: { x: 120, y: 500 },
+  platforms: [
+    { id: "ground", type: "solid", x: 0, y: 640, width: 5000, height: 80 },
+    { id: "p1", type: "oneWay", x: 320, y: 500, width: 180, height: 24 },
+    { id: "p2", type: "oneWay", x: 600, y: 400, width: 180, height: 24 },
+    { id: "p3", type: "oneWay", x: 920, y: 480, width: 200, height: 24 },
+    { id: "p4", type: "oneWay", x: 1260, y: 400, width: 200, height: 24 },
+    { id: "p5", type: "oneWay", x: 1620, y: 500, width: 200, height: 24 },
+    { id: "p6", type: "oneWay", x: 1980, y: 400, width: 200, height: 24 },
+    { id: "p7", type: "oneWay", x: 2360, y: 480, width: 200, height: 24 },
+    { id: "p8", type: "oneWay", x: 2740, y: 420, width: 200, height: 24 },
+    { id: "p9", type: "oneWay", x: 3140, y: 500, width: 200, height: 24 },
+    { id: "p10", type: "oneWay", x: 3540, y: 400, width: 200, height: 24 },
+    { id: "p11", type: "oneWay", x: 3960, y: 480, width: 200, height: 24 },
+    { id: "p12", type: "oneWay", x: 4380, y: 420, width: 200, height: 24 }
+  ],
+  obstacles: [
+    { id: "o1", x: 500, y: 560, width: 40, height: 80 },
+    { id: "o2", x: 1050, y: 520, width: 40, height: 120 },
+    { id: "o3", x: 1550, y: 560, width: 40, height: 80 },
+    { id: "o4", x: 2100, y: 520, width: 40, height: 120 },
+    { id: "o5", x: 2650, y: 560, width: 40, height: 80 },
+    { id: "o6", x: 3300, y: 520, width: 40, height: 120 },
+    { id: "o7", x: 3900, y: 560, width: 40, height: 80 },
+    { id: "o8", x: 4500, y: 520, width: 40, height: 120 }
+  ],
+  hazards: [
+    { id: "h1", x: 820, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h2", x: 1380, y: 620, width: 120, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h3", x: 1900, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h4", x: 2450, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h5", x: 3050, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h6", x: 3650, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" },
+    { id: "h7", x: 4250, y: 620, width: 130, height: 20, damage: 0.5, texture: "./assets/images/ui/spikes.png" }
+  ],
+  enemies: [
+    { id: "e4-1", type: "enemy1", spawn: { x: 700, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 700, y: 544 }, { x: 980, y: 544 }] } },
+    { id: "e4-2", type: "enemy2", spawn: { x: 1250, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 1250, y: 544 }, { x: 1520, y: 544 }] } },
+    { id: "e4-3", type: "enemy3", spawn: { x: 1800, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 1800, y: 544 }, { x: 2080, y: 544 }] } },
+    { id: "e4-4", type: "enemy1", spawn: { x: 2350, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2350, y: 544 }, { x: 2640, y: 544 }] } },
+    { id: "e4-5", type: "enemy2", spawn: { x: 2950, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2950, y: 544 }, { x: 3250, y: 544 }] } },
+    { id: "e4-6", type: "enemy3", spawn: { x: 3550, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 3550, y: 544 }, { x: 3850, y: 544 }] } }
+  ],
+  exit: { x: 4860, y: 0, width: 80, height: 720 }
+};
+</file>
+
+<file path="js/config/friends.config.js">
+/**
+ * Конфигурация всех 12 типов Friend.
+ * У Friend НЕТ damage-звука; есть только один spawn-звук.
+ * Соглашения по структуре совпадают с enemies.config.js.
+ *
+ * Механика появления:
+ *  - На каждом уровне (1–5) при нормальном входе выполняется один roll.
+ *    С вероятностью FRIEND_RANDOM_SPAWN.chance появляется ровно один Friend.
+ *  - Максимум один Friend helper на уровень.
+ *  - Результат roll-а кэшируется LevelManager-ом и переиспользуется при restart
+ *    того же уровня, чтобы layout не менялся.
+ *  - Если на Level 5 helper уже появился, FinaleController НЕ создаёт дубликат
+ *    этого типа — 12 уникальных типов присутствуют в финале ровно по одному.
+ */
+
+export const FRIEND_BASE_CONFIG = {
+  size: { width: 64, height: 96 },
+  health: { max: 1 },
+  movement: {
+    speed: 180,
+    jumpVelocity: -700,
+    stompBounceVelocity: -420
+  }
+};
+
+export const FRIEND_RANDOM_SPAWN = Object.freeze({
+  chance: 0.40,
+  disabledLevelIds: []
+});
+
+function buildFriendConfig(n, nickname) {
+  return {
+    type: `friend-${n}`,
+    nickname,
+    size: { ...FRIEND_BASE_CONFIG.size },
+    health: { ...FRIEND_BASE_CONFIG.health },
+    movement: { ...FRIEND_BASE_CONFIG.movement },
+    appearance: {
+      headTexture: `./assets/images/friends/type${n}/head.png`,
+      bodyTexture: `./assets/images/friends/type${n}/body.png`
+    },
+    audio: {
+      spawn: `./assets/audio/friends/type-${n}/spawn.mp3`
+    }
+  };
+}
+
+export const FRIEND_TYPE_1_CONFIG = buildFriendConfig(1, "Вита");
+export const FRIEND_TYPE_2_CONFIG = buildFriendConfig(2, "Иван");
+export const FRIEND_TYPE_3_CONFIG = buildFriendConfig(3, "Тина");
+export const FRIEND_TYPE_4_CONFIG = buildFriendConfig(4, "Полина");
+export const FRIEND_TYPE_5_CONFIG = buildFriendConfig(5, "Марина");
+export const FRIEND_TYPE_6_CONFIG = buildFriendConfig(6, "Настя");
+export const FRIEND_TYPE_7_CONFIG = buildFriendConfig(7, "Настя");
+export const FRIEND_TYPE_8_CONFIG = buildFriendConfig(8, "Алиса");
+export const FRIEND_TYPE_9_CONFIG = buildFriendConfig(9, "9мышей");
+export const FRIEND_TYPE_10_CONFIG = buildFriendConfig(10, "Кай Ангел");
+export const FRIEND_TYPE_11_CONFIG = buildFriendConfig(11, "Кира");
+export const FRIEND_TYPE_12_CONFIG = buildFriendConfig(12, "L");
+
+export const FRIEND_CONFIG_BY_TYPE = Object.freeze({
+  "friend-1": FRIEND_TYPE_1_CONFIG,
+  "friend-2": FRIEND_TYPE_2_CONFIG,
+  "friend-3": FRIEND_TYPE_3_CONFIG,
+  "friend-4": FRIEND_TYPE_4_CONFIG,
+  "friend-5": FRIEND_TYPE_5_CONFIG,
+  "friend-6": FRIEND_TYPE_6_CONFIG,
+  "friend-7": FRIEND_TYPE_7_CONFIG,
+  "friend-8": FRIEND_TYPE_8_CONFIG,
+  "friend-9": FRIEND_TYPE_9_CONFIG,
+  "friend-10": FRIEND_TYPE_10_CONFIG,
+  "friend-11": FRIEND_TYPE_11_CONFIG,
+  "friend-12": FRIEND_TYPE_12_CONFIG
+});
+
+export const FRIEND_TYPES_ORDERED = Object.freeze([
+  "friend-1", "friend-2", "friend-3", "friend-4",
+  "friend-5", "friend-6", "friend-7", "friend-8",
+  "friend-9", "friend-10", "friend-11", "friend-12"
+]);
+</file>
+
 <file path="js/levels/level-1.config.js">
 export const LEVEL_1 = {
   id: 1,
-  music: "./assets/audio/level-1/Light Club - Blizzard.mp3",
+  music: "./assets/audio/level-1/opening 1 - Death Note.mp3",
+  visuals: {
+    background: { texture: "./assets/images/ui/balasiha.jpeg" },
+    ground: { texture: "./assets/images/levels/level-1/ground.png" },
+    platform: { texture: "./assets/images/levels/level-1/platform.png" }
+  },
   world: { width: 3200, height: 720 },
   playerSpawn: { x: 120, y: 500 },
   platforms: [
@@ -3759,7 +3993,12 @@ export const LEVEL_1 = {
 <file path="js/levels/level-3.config.js">
 export const LEVEL_3 = {
   id: 3,
-  music: "./assets/audio/music/level-3.mp3",
+  music: "./assets/audio/level-3/Kai Angel, 9mice-LIPSTICK.mp3",
+  visuals: {
+    background: { texture: "./assets/images/ui/balasiha.jpeg" },
+    ground: { texture: "./assets/images/ui/asphalt.png" },
+    platform: { texture: "./assets/images/ui/asphalt.png" }
+  },
   world: { width: 4400, height: 720 },
   playerSpawn: { x: 120, y: 500 },
   platforms: [
@@ -3805,7 +4044,12 @@ export const LEVEL_3 = {
 <file path="js/levels/level-5.config.js">
 export const LEVEL_5 = {
   id: 5,
-  music: "./assets/audio/music/level-5.mp3",
+  music: "./assets/audio/level-5/Pharaon - Дико Например Gay Remix.mp3",
+  visuals: {
+    background: { texture: "./assets/images/levels/level-5/background.png" },
+    ground: { texture: "./assets/images/levels/level-5/ground.png" },
+    platform: { texture: "./assets/images/levels/level-5/platform.png" }
+  },
   world: { width: 2400, height: 720 },
   playerSpawn: { x: 120, y: 500 },
   platforms: [
@@ -3834,13 +4078,9 @@ export const LEVEL_5 = {
     { id: "e5-4", type: "enemy1", spawn: { x: 2000, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2000, y: 544 }, { x: 2250, y: 544 }] } }
   ],
   // НЕТ массива friends — Friends здесь появляются только через FinaleController
-  // после BOSS_DEFEATED.
+  // после BOSS_DEFEATED, либо как random helper (40%) при загрузке уровня.
   boss: { x: 2100, y: 448 },
   bossTraps: [
-    // Boss статичен на x 2100..2228, y 448..640.
-    // damageZone каждой ловушки реально пересекает AABB Boss-а.
-    // Значение damage НЕ указано — LevelManager берёт его из BOSS_CONFIG
-    // (health.max / requiredTrapHits = 10 / 5 = 2).
     {
       id: "boss-trap-01",
       trigger: { x: 300, y: 560, width: 80, height: 80 },
@@ -3913,6 +4153,11 @@ export class FinaleController {
     this.active = false;
     this.phase = "idle";
     this.fireworks.stop();
+  }
+
+  /** @returns {boolean} true, когда fireworks фактически активны. */
+  isFireworksActive() {
+    return this.active && this.fireworks.active;
   }
 
   update(dt) {
@@ -4176,8 +4421,6 @@ export class LevelManager {
     /**
      * Кэш разрешённых enemy-pool-ов.
      * Структура: { levelId, resolvedEnemies: [...] }.
-     * Переиспользуется при restart того же уровня, чтобы layout врагов
-     * (в т.ч. результаты разрешения пулов типа) не менялся.
      */
     this._enemyLayoutState = null;
   }
@@ -4198,8 +4441,6 @@ export class LevelManager {
     this.currentLevelId = levelId;
     this.currentLevel = { ...cfg, traps: [] };
 
-    // Friend roll и enemy pool resolution ДО preload — единый выбор для
-    // ассетов и для фактического создания сущностей.
     const friendDecision = this._getOrCreateRandomFriendDecision(levelId, isRestart);
     const friendTypeToPreload = friendDecision.spawn ? friendDecision.type : null;
     const resolvedEnemies = this._resolveEnemyTypes(cfg.enemies || [], levelId, isRestart);
@@ -4214,7 +4455,7 @@ export class LevelManager {
     this.player = player;
     this.entityManager.add(player);
 
-    // Enemies — из уже разрешённого массива (типы окончательные).
+    // Enemies
     for (const spawn of resolvedEnemies) {
       let e;
       if (spawn.type === "enemy1") e = new EnemyType1(spawn);
@@ -4286,7 +4527,7 @@ export class LevelManager {
   }
 
   // ---------------------------------------------------------------------------
-  // Random Friend helper (Levels 1–5, 40%, без reroll при restart)
+  // Random Friend helper
   // ---------------------------------------------------------------------------
 
   _getOrCreateRandomFriendDecision(levelId, isRestart) {
@@ -4355,13 +4596,6 @@ export class LevelManager {
   // Enemy pool resolution
   // ---------------------------------------------------------------------------
 
-  /**
-   * Разрешает декларативные пулы типов врагов в конкретные типы.
-   *  - `spawn.type` может быть строкой ("enemy1") или массивом-пулом
-   *    (["enemy1","enemy2"]), из которого тип выбирается равновероятно.
-   *  - Результат кэшируется по levelId и переиспользуется при restart.
-   *  - При новом нормальном входе на уровень выполняется новый roll.
-   */
   _resolveEnemyTypes(enemies, levelId, isRestart) {
     if (isRestart &&
         this._enemyLayoutState &&
@@ -4389,6 +4623,22 @@ export class LevelManager {
 
     if (PLAYER_CONFIG.appearance) {
       paths.push(PLAYER_CONFIG.appearance.headTexture, PLAYER_CONFIG.appearance.bodyTexture);
+      if (PLAYER_CONFIG.appearance.finalBodyTexture) {
+        paths.push(PLAYER_CONFIG.appearance.finalBodyTexture);
+      }
+    }
+
+    // Level-specific visuals (background / ground / platform)
+    if (cfg.visuals) {
+      if (cfg.visuals.background && cfg.visuals.background.texture) {
+        paths.push(cfg.visuals.background.texture);
+      }
+      if (cfg.visuals.ground && cfg.visuals.ground.texture) {
+        paths.push(cfg.visuals.ground.texture);
+      }
+      if (cfg.visuals.platform && cfg.visuals.platform.texture) {
+        paths.push(cfg.visuals.platform.texture);
+      }
     }
 
     const enemies = resolvedEnemies || cfg.enemies || [];
@@ -4401,6 +4651,18 @@ export class LevelManager {
       const fc = FRIEND_CONFIG_BY_TYPE[randomFriendType];
       if (fc && fc.appearance) {
         paths.push(fc.appearance.headTexture, fc.appearance.bodyTexture);
+      }
+    }
+
+    // Boss level: FinaleController создаст ВСЕ 12 типов Friend'ов.
+    // Гарантируем, что все их текстуры попали в кэш ResourceManager
+    // до того, как игрок победит Boss — без "pop-in" в финале.
+    if (cfg.boss) {
+      for (const typeKey of FRIEND_TYPES_ORDERED) {
+        const fc = FRIEND_CONFIG_BY_TYPE[typeKey];
+        if (fc && fc.appearance) {
+          paths.push(fc.appearance.headTexture, fc.appearance.bodyTexture);
+        }
       }
     }
 
@@ -4473,6 +4735,12 @@ export class LevelManager {
           if (typesUsed.has("enemy2")) paths.push(ENEMY_TYPE_2_CONFIG.appearance.headTexture, ENEMY_TYPE_2_CONFIG.appearance.bodyTexture);
           if (typesUsed.has("enemy3")) paths.push(ENEMY_TYPE_3_CONFIG.appearance.headTexture, ENEMY_TYPE_3_CONFIG.appearance.bodyTexture);
           if (lvl.boss) paths.push(BOSS_CONFIG.appearance.headTexture, BOSS_CONFIG.appearance.bodyTexture);
+          // Level visuals
+          if (lvl.visuals) {
+            if (lvl.visuals.background && lvl.visuals.background.texture) paths.push(lvl.visuals.background.texture);
+            if (lvl.visuals.ground && lvl.visuals.ground.texture) paths.push(lvl.visuals.ground.texture);
+            if (lvl.visuals.platform && lvl.visuals.platform.texture) paths.push(lvl.visuals.platform.texture);
+          }
           await this.resourceManager.loadImages(paths);
         }
       } catch (e) { /* ignore */ }
@@ -4515,89 +4783,6 @@ export class LevelManager {
     await this.load(this.currentLevelId + 1, { resetHealth: true, isRestart: false });
   }
 }
-</file>
-
-<file path="js/config/friends.config.js">
-/**
- * Конфигурация всех 12 типов Friend.
- * У Friend НЕТ damage-звука; есть только один spawn-звук.
- * Соглашения по структуре совпадают с enemies.config.js.
- *
- * Механика появления:
- *  - На каждом уровне (1–5) при нормальном входе выполняется один roll.
- *    С вероятностью FRIEND_RANDOM_SPAWN.chance появляется ровно один Friend.
- *  - Максимум один Friend helper на уровень.
- *  - Результат roll-а кэшируется LevelManager-ом и переиспользуется при restart
- *    того же уровня, чтобы layout не менялся.
- *  - Если на Level 5 helper уже появился, FinaleController НЕ создаёт дубликат
- *    этого типа — 12 уникальных типов присутствуют в финале ровно по одному.
- */
-
-export const FRIEND_BASE_CONFIG = {
-  size: { width: 64, height: 96 },
-  health: { max: 1 },
-  movement: {
-    speed: 180,
-    jumpVelocity: -700,
-    stompBounceVelocity: -420
-  }
-};
-
-export const FRIEND_RANDOM_SPAWN = Object.freeze({
-  chance: 0.40,
-  disabledLevelIds: []
-});
-
-function buildFriendConfig(n, nickname) {
-  return {
-    type: `friend-${n}`,
-    nickname,
-    size: { ...FRIEND_BASE_CONFIG.size },
-    health: { ...FRIEND_BASE_CONFIG.health },
-    movement: { ...FRIEND_BASE_CONFIG.movement },
-    appearance: {
-      headTexture: `./assets/images/friends/type${n}/head.png`,
-      bodyTexture: `./assets/images/friends/type${n}/body.png`
-    },
-    audio: {
-      spawn: `./assets/audio/friends/type-${n}/spawn.mp3`
-    }
-  };
-}
-
-export const FRIEND_TYPE_1_CONFIG = buildFriendConfig(1, "Вита");
-export const FRIEND_TYPE_2_CONFIG = buildFriendConfig(2, "Иван");
-export const FRIEND_TYPE_3_CONFIG = buildFriendConfig(3, "Тина");
-export const FRIEND_TYPE_4_CONFIG = buildFriendConfig(4, "Полина");
-export const FRIEND_TYPE_5_CONFIG = buildFriendConfig(5, "Марина");
-export const FRIEND_TYPE_6_CONFIG = buildFriendConfig(6, "Настя");
-export const FRIEND_TYPE_7_CONFIG = buildFriendConfig(7, "Настя");
-export const FRIEND_TYPE_8_CONFIG = buildFriendConfig(8, "Алиса");
-export const FRIEND_TYPE_9_CONFIG = buildFriendConfig(9, "9мышей");
-export const FRIEND_TYPE_10_CONFIG = buildFriendConfig(10, "Кай Ангел");
-export const FRIEND_TYPE_11_CONFIG = buildFriendConfig(11, "Кира");
-export const FRIEND_TYPE_12_CONFIG = buildFriendConfig(12, "L");
-
-export const FRIEND_CONFIG_BY_TYPE = Object.freeze({
-  "friend-1": FRIEND_TYPE_1_CONFIG,
-  "friend-2": FRIEND_TYPE_2_CONFIG,
-  "friend-3": FRIEND_TYPE_3_CONFIG,
-  "friend-4": FRIEND_TYPE_4_CONFIG,
-  "friend-5": FRIEND_TYPE_5_CONFIG,
-  "friend-6": FRIEND_TYPE_6_CONFIG,
-  "friend-7": FRIEND_TYPE_7_CONFIG,
-  "friend-8": FRIEND_TYPE_8_CONFIG,
-  "friend-9": FRIEND_TYPE_9_CONFIG,
-  "friend-10": FRIEND_TYPE_10_CONFIG,
-  "friend-11": FRIEND_TYPE_11_CONFIG,
-  "friend-12": FRIEND_TYPE_12_CONFIG
-});
-
-export const FRIEND_TYPES_ORDERED = Object.freeze([
-  "friend-1", "friend-2", "friend-3", "friend-4",
-  "friend-5", "friend-6", "friend-7", "friend-8",
-  "friend-9", "friend-10", "friend-11", "friend-12"
-]);
 </file>
 
 </files>

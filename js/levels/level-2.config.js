@@ -1,10 +1,9 @@
 export const LEVEL_2 = {
   id: 2,
   music: "./assets/audio/level-2/Toly Summer - Цените Жизнь.mp3",
+  surfaceTheme: "school",
   visuals: {
-    background: { texture: "./assets/images/levels/level-2/background.png" },
-    ground: { texture: "./assets/images/levels/level-2/ground.png" },
-    platform: { texture: "./assets/images/levels/level-2/platform.png" }
+    background: { texture: "./assets/images/ui/level2.png" }
   },
   world: { width: 3800, height: 720 },
   playerSpawn: { x: 120, y: 500 },

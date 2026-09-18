@@ -1,10 +1,9 @@
 export const LEVEL_5 = {
   id: 5,
   music: "./assets/audio/level-5/Pharaon - Дико Например Gay Remix.mp3",
+  surfaceTheme: "apartment",
   visuals: {
-    background: { texture: "./assets/images/levels/level-5/background.png" },
-    ground: { texture: "./assets/images/levels/level-5/ground.png" },
-    platform: { texture: "./assets/images/levels/level-5/platform.png" }
+    background: { texture: "./assets/images/ui/level5.png" }
   },
   world: { width: 2400, height: 720 },
   playerSpawn: { x: 120, y: 500 },
@@ -33,8 +32,6 @@ export const LEVEL_5 = {
     { id: "e5-3", type: "enemy3", spawn: { x: 1500, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 1500, y: 544 }, { x: 1750, y: 544 }] } },
     { id: "e5-4", type: "enemy1", spawn: { x: 2000, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2000, y: 544 }, { x: 2250, y: 544 }] } }
   ],
-  // НЕТ массива friends — Friends здесь появляются только через FinaleController
-  // после BOSS_DEFEATED, либо как random helper (40%) при загрузке уровня.
   boss: { x: 2100, y: 448 },
   bossTraps: [
     {

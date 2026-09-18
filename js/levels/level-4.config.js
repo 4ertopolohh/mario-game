@@ -1,10 +1,9 @@
 export const LEVEL_4 = {
   id: 4,
   music: "./assets/audio/level-4/Light Club - Blizzard.mp3",
+  surfaceTheme: "oldDorm",
   visuals: {
-    background: { texture: "./assets/images/levels/level-4/background.png" },
-    ground: { texture: "./assets/images/levels/level-4/ground.png" },
-    platform: { texture: "./assets/images/levels/level-4/platform.png" }
+    background: { texture: "./assets/images/ui/level4.png" }
   },
   world: { width: 5000, height: 720 },
   playerSpawn: { x: 120, y: 500 },

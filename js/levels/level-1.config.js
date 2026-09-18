@@ -1,10 +1,9 @@
 export const LEVEL_1 = {
   id: 1,
   music: "./assets/audio/level-1/opening 1 - Death Note.mp3",
+  surfaceTheme: "hospital",
   visuals: {
-    background: { texture: "./assets/images/ui/balasiha.jpeg" },
-    ground: { texture: "./assets/images/levels/level-1/ground.png" },
-    platform: { texture: "./assets/images/levels/level-1/platform.png" }
+    background: { texture: "./assets/images/ui/level1.png" }
   },
   world: { width: 3200, height: 720 },
   playerSpawn: { x: 120, y: 500 },
@@ -30,7 +29,6 @@ export const LEVEL_1 = {
   enemies: [
     { id: "e1-1", type: "enemy1", spawn: { x: 900, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 900, y: 544 }, { x: 1250, y: 544 }] } },
     { id: "e1-2", type: "enemy2", spawn: { x: 1650, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 1650, y: 544 }, { x: 2000, y: 544 }] } },
-    // Enemy Type 3 запрещён на Level 1. Пул равновероятно даёт enemy1/enemy2.
     { id: "e1-3", type: ["enemy1", "enemy2"], spawn: { x: 2350, y: 544 }, patrol: { mode: "pingPong", points: [{ x: 2350, y: 544 }, { x: 2750, y: 544 }] } }
   ],
   exit: { x: 3080, y: 0, width: 80, height: 720 }

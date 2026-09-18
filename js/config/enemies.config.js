@@ -15,7 +15,7 @@ export const ENEMY_TYPE_1_CONFIG = {
   },
   audio: {
     damage: "./assets/audio/enemies/type-1/damage.mp3",
-    extra: { firstVisible: "./assets/audio/enemies/type-1/visible.mp3" }
+    extra: { firstVisible: "./assets/audio/enemies/type-1/extra.mp3" }
   }
 };
 
@@ -24,11 +24,12 @@ export const ENEMY_TYPE_2_CONFIG = {
   nickname: "Богданчик",
   appearance: {
     headTexture: "./assets/images/enemies/type-2/head.png",
-    bodyTexture: "./assets/images/enemies/type-2/body.png"
+    bodyTexture: "./assets/images/enemies/type-2/body.png",
+    headScale: 1.3
   },
   audio: {
     damage: "./assets/audio/enemies/type-2/damage.mp3",
-    extra: { firstVisible: "./assets/audio/enemies/type-2/visible.mp3" }
+    extra: { firstVisible: "./assets/audio/enemies/type-2/extra.mp3" }
   }
 };
 
@@ -41,6 +42,6 @@ export const ENEMY_TYPE_3_CONFIG = {
   },
   audio: {
     damage: "./assets/audio/enemies/type-3/damage.mp3",
-    extra: { firstVisible: "./assets/audio/enemies/type-3/visible.mp3" }
+    extra: { firstVisible: "./assets/audio/enemies/type-3/extra.mp3" }
   }
 };

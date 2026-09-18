@@ -29,18 +29,7 @@ export class LevelManager {
     this.resourceManager = game.resourceManager;
     this.entityManager = game.entityManager;
     this.eventBus = game.eventBus;
-
-    /**
-     * Кэш roll-а случайного Friend helper-а.
-     * Структура: { levelId, spawn:boolean, type:string|null }.
-     * Переиспользуется при restart того же уровня.
-     */
     this._randomFriendState = null;
-
-    /**
-     * Кэш разрешённых enemy-pool-ов.
-     * Структура: { levelId, resolvedEnemies: [...] }.
-     */
     this._enemyLayoutState = null;
   }
 
@@ -85,7 +74,7 @@ export class LevelManager {
       this.entityManager.add(e);
     }
 
-    // Случайный Friend (Levels 1–5, 40%, максимум один)
+    // Случайный Friend
     if (friendDecision.spawn && friendDecision.type) {
       const spawnPos = this._findSafeFriendSpawn(cfg);
       const f = createFriend(friendDecision.type, {
@@ -106,7 +95,7 @@ export class LevelManager {
       this.boss = boss;
     }
 
-    // Traps. Единый источник истины — BOSS_CONFIG.
+    // Traps
     if (cfg.bossTraps && cfg.bossTraps.length > 0) {
       const requiredHits = BOSS_CONFIG.requiredTrapHits || 5;
       const computedDamage = BOSS_CONFIG.health.max / requiredHits;
@@ -144,10 +133,6 @@ export class LevelManager {
 
     return true;
   }
-
-  // ---------------------------------------------------------------------------
-  // Random Friend helper
-  // ---------------------------------------------------------------------------
 
   _getOrCreateRandomFriendDecision(levelId, isRestart) {
     if (isRestart &&
@@ -211,10 +196,6 @@ export class LevelManager {
     return false;
   }
 
-  // ---------------------------------------------------------------------------
-  // Enemy pool resolution
-  // ---------------------------------------------------------------------------
-
   _resolveEnemyTypes(enemies, levelId, isRestart) {
     if (isRestart &&
         this._enemyLayoutState &&
@@ -233,10 +214,6 @@ export class LevelManager {
     return resolved;
   }
 
-  // ---------------------------------------------------------------------------
-  // Asset preload
-  // ---------------------------------------------------------------------------
-
   async _preloadLevelAssets(cfg, randomFriendType = null, resolvedEnemies = null) {
     const paths = [];
 
@@ -247,17 +224,9 @@ export class LevelManager {
       }
     }
 
-    // Level-specific visuals (background / ground / platform)
-    if (cfg.visuals) {
-      if (cfg.visuals.background && cfg.visuals.background.texture) {
-        paths.push(cfg.visuals.background.texture);
-      }
-      if (cfg.visuals.ground && cfg.visuals.ground.texture) {
-        paths.push(cfg.visuals.ground.texture);
-      }
-      if (cfg.visuals.platform && cfg.visuals.platform.texture) {
-        paths.push(cfg.visuals.platform.texture);
-      }
+    // Level visuals: только background. Ground/platform теперь процедурные.
+    if (cfg.visuals && cfg.visuals.background && cfg.visuals.background.texture) {
+      paths.push(cfg.visuals.background.texture);
     }
 
     const enemies = resolvedEnemies || cfg.enemies || [];
@@ -273,9 +242,6 @@ export class LevelManager {
       }
     }
 
-    // Boss level: FinaleController создаст ВСЕ 12 типов Friend'ов.
-    // Гарантируем, что все их текстуры попали в кэш ResourceManager
-    // до того, как игрок победит Boss — без "pop-in" в финале.
     if (cfg.boss) {
       for (const typeKey of FRIEND_TYPES_ORDERED) {
         const fc = FRIEND_CONFIG_BY_TYPE[typeKey];
@@ -354,11 +320,9 @@ export class LevelManager {
           if (typesUsed.has("enemy2")) paths.push(ENEMY_TYPE_2_CONFIG.appearance.headTexture, ENEMY_TYPE_2_CONFIG.appearance.bodyTexture);
           if (typesUsed.has("enemy3")) paths.push(ENEMY_TYPE_3_CONFIG.appearance.headTexture, ENEMY_TYPE_3_CONFIG.appearance.bodyTexture);
           if (lvl.boss) paths.push(BOSS_CONFIG.appearance.headTexture, BOSS_CONFIG.appearance.bodyTexture);
-          // Level visuals
-          if (lvl.visuals) {
-            if (lvl.visuals.background && lvl.visuals.background.texture) paths.push(lvl.visuals.background.texture);
-            if (lvl.visuals.ground && lvl.visuals.ground.texture) paths.push(lvl.visuals.ground.texture);
-            if (lvl.visuals.platform && lvl.visuals.platform.texture) paths.push(lvl.visuals.platform.texture);
+          // Только background — ground/platform процедурные.
+          if (lvl.visuals && lvl.visuals.background && lvl.visuals.background.texture) {
+            paths.push(lvl.visuals.background.texture);
           }
           await this.resourceManager.loadImages(paths);
         }

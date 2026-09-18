@@ -40,7 +40,7 @@ function buildFriendConfig(n, nickname) {
       bodyTexture: `./assets/images/friends/type${n}/body.png`
     },
     audio: {
-      spawn: `./assets/audio/friends/type-${n}/spawn.mp3`
+      spawn: `./assets/audio/friends/friend-${n}/extra.mp3`
     }
   };
 }
